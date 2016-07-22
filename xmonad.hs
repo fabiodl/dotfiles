@@ -10,6 +10,8 @@ import qualified DBus.Client as D
 import qualified Codec.Binary.UTF8.String as UTF8
 
 import XMonad.Layout.Reflect
+import XMonad.Layout.MultiToggle
+
 import XMonad.Hooks.DynamicLog
 import XMonad.Util.EZConfig(additionalKeys)
 import XMonad.Hooks.SetWMName
@@ -73,7 +75,7 @@ main = do
                       -- fadeHook 
                       dynamicLogWithPP (prettyPrinter dbus) 
  , mouseBindings = myMouseBindings  
- , layoutHook = smartBorders (reflectHoriz $ layoutHook gnomeConfig)
+ , layoutHook = smartBorders ( mkToggle (single REFLECTX) $ layoutHook gnomeConfig) 
  , normalBorderColor   =  "gray50"
          , focusedBorderColor =  "skyblue"
          ,  modMask = mod4Mask -- set the mod key to the windows key
@@ -90,6 +92,7 @@ myKeys=
         , ((mod4Mask , xK_b     ), windowPromptBring defaultXPConfig)
  , ((mod4Mask , xK_Left), sendToScreen 0 >> viewScreen 0 >> windows W.swapMaster)
  , ((mod4Mask , xK_Right), sendToScreen 1 >> viewScreen 1 >> windows W.swapMaster)
+ , ((mod4Mask , xK_Up), sendMessage $ Toggle REFLECTX)
  , ((mod4Mask , xK_i), spawn "google-chrome")
         , ((mod4Mask , xK_d), spawn "gjiten") 
  , ((mod4Mask , xK_p), spawn "dmenu_run -nb black -nf skyblue -sb skyblue -sf black ") 
