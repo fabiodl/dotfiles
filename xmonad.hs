@@ -57,6 +57,7 @@ myManageHook = composeAll
     , className =? "Vncviewer"   --> doFloat
     , className =? "stalonetray" --> doIgnore
     , className =? "com-mathworks-util-PostVMInit" --> doFloat
+    , className =? "Cairo-dock" --> doFloat
     ]
 
 
@@ -81,7 +82,8 @@ main = do
          ,  modMask = mod4Mask -- set the mod key to the windows key
  , startupHook = setWMName "LG3D"
  , handleEventHook =
-            handleEventHook defaultConfig <+> fullscreenEventHook
+            handleEventHook gnomeConfig <+> fullscreenEventHook
+             ,manageHook = myManageHook <+> manageHook gnomeConfig
          } `additionalKeys` myKeys
 
 myKeys=
