@@ -29,6 +29,7 @@ import XMonad.Prompt
 import XMonad.Prompt.Window
 import XMonad.Hooks.FadeInactive
 
+import XMonad.Util.Scratchpad
 
 button10 = 10 :: Button
 button13 = 13 :: Button
@@ -58,7 +59,8 @@ myManageHook = composeAll
     , className =? "stalonetray" --> doIgnore
     , className =? "com-mathworks-util-PostVMInit" --> doFloat
     , className =? "Cairo-dock" --> doFloat
-    ]
+    , className =? "platform-Emulicious" -->doFloat
+    ]  <+> scratchpadManageHook (W.RationalRect 0 0 1 0.3)
 
 
 myWorkspaces    = ["1","2","3","4","5","6","7","8","9"]
@@ -80,11 +82,17 @@ main = do
  , normalBorderColor   =  "gray50"
          , focusedBorderColor =  "skyblue"
          ,  modMask = mod4Mask -- set the mod key to the windows key
- , startupHook = setWMName "LG3D"
+ -- , startupHook = setWMName "LG3D"
  , handleEventHook =
             handleEventHook gnomeConfig <+> fullscreenEventHook
-             ,manageHook = myManageHook <+> manageHook gnomeConfig
+             ,manageHook = myManageHook <+> manageHook gnomeConfig 
+            
          } `additionalKeys` myKeys
+
+scratchPad = scratchpadSpawnActionTerminal myTerminal
+myTerminal :: String
+myTerminal = "urxvt"
+
 
 myKeys=
  [ ((mod1Mask .|. shiftMask , xK_BackSpace), spawn "gnome-screensaver-command -l")
@@ -96,7 +104,8 @@ myKeys=
  , ((mod4Mask , xK_Right), sendToScreen 1 >> viewScreen 1 >> windows W.swapMaster)
  , ((mod4Mask , xK_Up), sendMessage $ Toggle REFLECTX)
  , ((mod4Mask , xK_i), spawn "google-chrome")
-        , ((mod4Mask , xK_d), spawn "gjiten") 
+ , ((0, xK_F12), scratchPad) -- quake terminal
+ , ((mod4Mask , xK_d), spawn "gjiten")   
  , ((mod4Mask , xK_p), spawn "dmenu_run -nb black -nf skyblue -sb skyblue -sf black ") 
         ]
  ++
@@ -113,11 +122,15 @@ prettyPrinter dbus = defaultPP
     , ppTitle    = pangoColor "white" . wrap "<span font=\"Sans Bold 8\">" "</span>" .pangoSanitize
     , ppCurrent  = pangoColor "lightsalmon" . wrap "<span font=\"Sans Bold 8\">{" "}</span>" . pangoSanitize
     , ppVisible  = pangoColor "seagreen" . wrap "<span font=\"Sans Bold 8\">[" "]</span>" . pangoSanitize
-    , ppHidden   = pangoColor "white" . wrap "<span font=\"Sans Bold 8\">(" ")</span>" . pangoSanitize
+    , ppHidden   = pangoColor "white" . wrap "<span font=\"Sans Bold 8\">(" ")</span>" . pangoSanitize . noScratchPad
     , ppUrgent   = pangoColor "red"
     , ppLayout   = pangoColor "seagreen" . wrap "<span font=\"Sans Bold 8\">|" "|</span>"
     , ppSep      = "<span font=\"Sans Bold 8\"> </span>"
     }
+ where
+    -- then define it down here: if the workspace is NSP then print
+    -- nothing, else print it as-is
+    noScratchPad ws = if ws == "NSP" then "" else ws
 
 getWellKnownName :: D.Client -> IO ()
 getWellKnownName dbus = do
@@ -146,5 +159,4 @@ pangoSanitize = foldr sanitize ""
     sanitize '\"' xs = "&quot;" ++ xs
     sanitize '&'  xs = "&amp;" ++ xs
     sanitize x    xs = x:xs
-
 
