@@ -12,6 +12,11 @@ import qualified Codec.Binary.UTF8.String as UTF8
 import XMonad.Layout.Reflect
 import XMonad.Layout.MultiToggle
 
+import XMonad.Layout.Tabbed
+--import XMonad.Layout.ShowWName
+--import XMonad.Actions.ShowText
+import CenteredFlash
+
 import XMonad.Hooks.DynamicLog
 import XMonad.Util.EZConfig(additionalKeys)
 import XMonad.Hooks.SetWMName
@@ -24,12 +29,16 @@ import qualified Data.Map        as M
 
 import XMonad.Actions.PhysicalScreens
 import XMonad.Actions.UpdatePointer
+import XMonad.Actions.CycleWS
 
 import XMonad.Prompt
 import XMonad.Prompt.Window
 import XMonad.Hooks.FadeInactive
 
 import XMonad.Util.Scratchpad
+import Data.Maybe (fromMaybe)
+import XMonad.Util.Loggers (logCurrent)
+
 
 button10 = 10 :: Button
 button13 = 13 :: Button
@@ -78,13 +87,13 @@ main = do
                       -- fadeHook 
                       dynamicLogWithPP (prettyPrinter dbus) 
  , mouseBindings = myMouseBindings  
- , layoutHook = smartBorders ( mkToggle (single REFLECTX) $ layoutHook gnomeConfig) 
+ , layoutHook = smartBorders (   mkToggle (single REFLECTX) $ layoutHook gnomeConfig) ||| tabbed shrinkText  defaultTheme
  , normalBorderColor   =  "gray50"
          , focusedBorderColor =  "skyblue"
          ,  modMask = mod4Mask -- set the mod key to the windows key
  -- , startupHook = setWMName "LG3D"
  , handleEventHook =
-            handleEventHook gnomeConfig <+> fullscreenEventHook
+            handleEventHook gnomeConfig <+> fullscreenEventHook <+> handleTimerEvent
              ,manageHook = myManageHook <+> manageHook gnomeConfig 
             
          } `additionalKeys` myKeys
@@ -94,15 +103,19 @@ myTerminal :: String
 myTerminal = "urxvt"
 
 
+
+
 myKeys=
  [ ((mod1Mask .|. shiftMask , xK_BackSpace), spawn "gnome-screensaver-command -l")
         , ((mod4Mask .|. shiftMask,   xK_q), spawn "xkill")
  , ((mod4Mask .|. shiftMask .|. controlMask,  xK_q), io exitSuccess)
  , ((mod4Mask , xK_g     ), windowPromptGoto  defaultXPConfig)
         , ((mod4Mask , xK_b     ), windowPromptBring defaultXPConfig)
- , ((mod4Mask , xK_Left), sendToScreen 0 >> viewScreen 0 >> windows W.swapMaster)
+ , ((mod4Mask , xK_Left),  sendToScreen 0 >> viewScreen 0 >> windows W.swapMaster)
  , ((mod4Mask , xK_Right), sendToScreen 1 >> viewScreen 1 >> windows W.swapMaster)
  , ((mod4Mask , xK_Up), sendMessage $ Toggle REFLECTX)
+ , ((mod4Mask , xK_n),  XMonad.Actions.CycleWS.moveTo XMonad.Actions.CycleWS.Next XMonad.Actions.CycleWS.HiddenNonEmptyWS)
+ , ((mod4Mask .|. shiftMask, xK_Up), swapNextScreen)
  , ((mod4Mask , xK_i), spawn "google-chrome")
  , ((0, xK_F12), scratchPad) -- quake terminal
  , ((mod4Mask , xK_d), spawn "gjiten")   
@@ -110,10 +123,33 @@ myKeys=
         ]
  ++
         [
-  ((m .|. mod4Mask, k), windows $ f i) -- Replace 'mod1Mask' with your mod key of choice.
+  ((m .|. mod4Mask, k),   (windows $ f i) >> printWs) -- Replace 'mod1Mask' with your mod key of choice.
          | (i, k) <- zip myWorkspaces [xK_1 .. xK_9]
-         , (f, m) <- [(W.view, 0), (W.shift, shiftMask), (W.greedyView, controlMask)]
+         , (f, m) <- [(lazyView, 0), (W.shift, shiftMask), (W.view, controlMask)]
         ]
+
+--adapted from http://xmonad.haskell.narkive.com/EToEJM1K/normal-rather-than-greedy-view-disable-screen-focus-switching
+isVisible w ws = any ((w ==) . W.tag . W.workspace) (W.visible ws)
+lazyView w ws = if isVisible w ws then ws else W.view w ws
+
+mySTConfig = defaultSTConfig { --st_font = "xft:Droid Sans:pixelsize=28"
+                          st_bg   = "black"
+                         , st_fg   = "skyblue"
+                         }
+
+
+--printWs= logCurrent >>= flashText mySTConfig 1 . fromMaybe ""         
+
+
+scWorkspace0 = withWindowSet $ return . W.lookupWorkspace 0 
+scWorkspace1 = withWindowSet $ return . W.lookupWorkspace 1
+spaced0=fmap (fmap (++" ")) scWorkspace0
+scWorkspaces= spaced0 <+> scWorkspace1
+printWs= scWorkspaces  >>= flashText mySTConfig 1 1920 1080 1680 1050 .fromMaybe ""
+
+
+
+
 
 
 prettyPrinter :: D.Client -> PP
@@ -159,4 +195,5 @@ pangoSanitize = foldr sanitize ""
     sanitize '\"' xs = "&quot;" ++ xs
     sanitize '&'  xs = "&amp;" ++ xs
     sanitize x    xs = x:xs
+
 
