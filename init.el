@@ -176,5 +176,6 @@
 
 (setq mouse-autoselect-window t)
 (menu-bar-mode 1)
+(global-unset-key (kbd "C-z"))
 
 (server-start)
