@@ -38,7 +38,11 @@ import XMonad.Hooks.FadeInactive
 import XMonad.Util.Scratchpad
 import Data.Maybe (fromMaybe)
 import XMonad.Util.Loggers (logCurrent)
-
+import Graphics.X11.Xinerama --for screen count
+import Data.List --for intercalate
+import Control.Monad
+import Data.Monoid
+import XMonad.Layout.IndependentScreens
 
 button10 = 10 :: Button
 button13 = 13 :: Button
@@ -114,7 +118,7 @@ myKeys=
  , ((mod4Mask , xK_Left),  sendToScreen 0 >> viewScreen 0 >> windows W.swapMaster)
  , ((mod4Mask , xK_Right), sendToScreen 1 >> viewScreen 1 >> windows W.swapMaster)
  , ((mod4Mask , xK_Up), sendMessage $ Toggle REFLECTX)
- , ((mod4Mask , xK_n),  XMonad.Actions.CycleWS.moveTo XMonad.Actions.CycleWS.Next XMonad.Actions.CycleWS.HiddenNonEmptyWS)
+ , ((mod4Mask , xK_n),  XMonad.Actions.CycleWS.moveTo XMonad.Actions.CycleWS.Next XMonad.Actions.CycleWS.HiddenNonEmptyWS >> printWs)
  , ((mod4Mask .|. shiftMask, xK_Up), swapNextScreen)
  , ((mod4Mask , xK_i), spawn "google-chrome")
  , ((0, xK_F12), scratchPad) -- quake terminal
@@ -125,7 +129,7 @@ myKeys=
         [
   ((m .|. mod4Mask, k),   (windows $ f i) >> printWs) -- Replace 'mod1Mask' with your mod key of choice.
          | (i, k) <- zip myWorkspaces [xK_1 .. xK_9]
-         , (f, m) <- [(lazyView, 0), (W.shift, shiftMask), (W.view, controlMask)]
+         , (f, m) <- [(lazyView, 0), (W.shift, shiftMask), (W.greedyView, controlMask)]
         ]
 
 --adapted from http://xmonad.haskell.narkive.com/EToEJM1K/normal-rather-than-greedy-view-disable-screen-focus-switching
@@ -138,19 +142,12 @@ mySTConfig = defaultSTConfig { --st_font = "xft:Droid Sans:pixelsize=28"
                          }
 
 
---printWs= logCurrent >>= flashText mySTConfig 1 . fromMaybe ""         
+scWork x= withWindowSet $ return . W.lookupWorkspace x
+spaced x=fmap (fmap (++" ")) x
 
-
-scWorkspace0 = withWindowSet $ return . W.lookupWorkspace 0 
-scWorkspace1 = withWindowSet $ return . W.lookupWorkspace 1
-spaced0=fmap (fmap (++" ")) scWorkspace0
-scWorkspaces= spaced0 <+> scWorkspace1
-printWs= scWorkspaces  >>= flashText mySTConfig 1 1920 1080 1680 1050 .fromMaybe ""
-
-
-
-
-
+getWorkspacesString count=foldr (<+>) mempty ([spaced (scWork  x) | x <- [0..count-2]] ++[scWork (count-1)])
+scWorkspaces=  countScreens >>= getWorkspacesString
+printWs= scWorkspaces  >>= flashText mySTConfig 1 .fromMaybe ""
 
 prettyPrinter :: D.Client -> PP
 prettyPrinter dbus = defaultPP

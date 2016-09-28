@@ -43,6 +43,10 @@ import XMonad.Util.XUtils (createNewWindow
                          , paintAndWrite)
 import qualified XMonad.Util.ExtensibleState as ES
 
+import Graphics.X11.Xinerama
+
+
+
 -- $usage
 -- You can use this module with the following in your @~\/.xmonad\/xmonad.hs@:
 --
@@ -94,23 +98,34 @@ handleTimerEvent _ = mempty
 -- | Shows a window in the center of the screen with the given text
 flashText :: ShowTextConfig
     -> Rational -- ^ number of seconds
-    -> Position
-    -> Position
-    -> Position
-    -> Position 
     -> String -- ^ text to display   
     -> X ()
 
 
-flashText c i wh0 ht0 wh1 ht1 s = do
+-- getScreenDim is from http://mntnoe.com/wp-content/uploads/2010/05/Panel.hs.html 
+-- | Return the dimensions (x, y, width, height) of screen n.
+getScreenDim :: Num a => Int -> IO (a, a, a, a)
+getScreenDim n = do
+    d <- openDisplay ""
+    screens  <- getScreenInfo d
+    closeDisplay d
+    let rn = screens!!(min (abs n) (length screens - 1))
+    case screens of
+        []        -> return $ (0, 0, 1024, 768) -- fallback
+        [r]       -> return $ (fromIntegral $ rect_x r , fromIntegral $ rect_y r , fromIntegral $ rect_width r , fromIntegral $ rect_height r )
+        otherwise -> return $ (fromIntegral $ rect_x rn, fromIntegral $ rect_y rn, fromIntegral $ rect_width rn, fromIntegral $ rect_height rn)
+
+
+flashText c i s = do
   f <- initXMF (st_font c)
   d <- asks display
   sc <- gets $ fi . screen . current . windowset
+  (csx, csy, cswidth, csheight) <-liftIO $ getScreenDim sc
   width <- textWidthXMF d f s
   (as,ds) <- textExtentsXMF f s
   let height = as + ds
-      y = if sc==0 then (fi ht0 - height + 2) `div` 2 else (fi ht1 - height + 2) `div` 2
-      x = if sc==0 then (fi wh0 - width + 2) `div` 2 else (fi wh1 - width + 2) `div` 2 + (fi wh0)
+      x = csx + (cswidth -width +2) `div` 2
+      y = csy + (csheight -fi height +2) `div` 2
   w <- createNewWindow (Rectangle (fi x) (fi y) (fi width) (fi height))
                       Nothing "" True
   showWindow w
