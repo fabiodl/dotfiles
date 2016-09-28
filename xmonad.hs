@@ -38,9 +38,6 @@ import XMonad.Hooks.FadeInactive
 import XMonad.Util.Scratchpad
 import Data.Maybe (fromMaybe)
 import XMonad.Util.Loggers (logCurrent)
-import Graphics.X11.Xinerama --for screen count
-import Data.List --for intercalate
-import Control.Monad
 import Data.Monoid
 import XMonad.Layout.IndependentScreens
 
@@ -113,13 +110,13 @@ myKeys=
  [ ((mod1Mask .|. shiftMask , xK_BackSpace), spawn "gnome-screensaver-command -l")
         , ((mod4Mask .|. shiftMask,   xK_q), spawn "xkill")
  , ((mod4Mask .|. shiftMask .|. controlMask,  xK_q), io exitSuccess)
- , ((mod4Mask , xK_g     ), windowPromptGoto  defaultXPConfig)
-        , ((mod4Mask , xK_b     ), windowPromptBring defaultXPConfig)
+ , ((mod4Mask , xK_g     ), windowPromptGoto  defaultXPConfig  >> printWs)
+ , ((mod4Mask , xK_b     ), windowPromptBring defaultXPConfig)
  , ((mod4Mask , xK_Left),  sendToScreen 0 >> viewScreen 0 >> windows W.swapMaster)
  , ((mod4Mask , xK_Right), sendToScreen 1 >> viewScreen 1 >> windows W.swapMaster)
  , ((mod4Mask , xK_Up), sendMessage $ Toggle REFLECTX)
  , ((mod4Mask , xK_n),  XMonad.Actions.CycleWS.moveTo XMonad.Actions.CycleWS.Next XMonad.Actions.CycleWS.HiddenNonEmptyWS >> printWs)
- , ((mod4Mask .|. shiftMask, xK_Up), swapNextScreen)
+ , ((mod4Mask .|. shiftMask, xK_Up), swapNextScreen >> printWs)
  , ((mod4Mask , xK_i), spawn "google-chrome")
  , ((0, xK_F12), scratchPad) -- quake terminal
  , ((mod4Mask , xK_d), spawn "gjiten")   
@@ -144,7 +141,6 @@ mySTConfig = defaultSTConfig { --st_font = "xft:Droid Sans:pixelsize=28"
 
 scWork x= withWindowSet $ return . W.lookupWorkspace x
 spaced x=fmap (fmap (++" ")) x
-
 getWorkspacesString count=foldr (<+>) mempty ([spaced (scWork  x) | x <- [0..count-2]] ++[scWork (count-1)])
 scWorkspaces=  countScreens >>= getWorkspacesString
 printWs= scWorkspaces  >>= flashText mySTConfig 1 .fromMaybe ""
