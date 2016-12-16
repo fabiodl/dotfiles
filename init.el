@@ -18,7 +18,12 @@
     elpy
     flycheck
     tangotango-theme
-    py-autopep8))
+    py-autopep8
+    flycheck-pyflakes
+    auto-complete
+    mozc
+    jedi
+))
 
 (mapc #'(lambda (package)
           (unless (package-installed-p package)
@@ -29,7 +34,11 @@
 ;; --------------------------------------
 
 (setq inhibit-startup-message t) ;; hide the startup message
-(load-theme 'tangotango t) ;; load theme
+
+(if (display-graphic-p) 
+    (load-theme 'tangotango t) 
+)
+
 (global-linum-mode t) ;; enable line numbers globally
 
 ;; PYTHON CONFIGURATION
@@ -37,7 +46,8 @@
 
 (elpy-enable)
 (elpy-use-ipython)
-
+(setq python-shell-interpreter "ipython"
+    python-shell-interpreter-args "--simple-prompt -i")
 
 ;; use flycheck not flymake with elpy
 (when (require 'flycheck nil t)
@@ -54,13 +64,14 @@
 (global-auto-complete-mode t)
 
 (add-hook 'python-mode-hook 'jedi:setup)
-(setq jedi:complete-on-dot t)                 ; optional
+;(setq jedi:complete-on-dot t)                 ; optional
 
 
 
 
 
 (require 'mozc)
+;; or (load-file "/path/to/mozc.el")
 (set-language-environment "Japanese")
 (setq default-input-method "japanese-mozc")
 (prefer-coding-system 'utf-8)
@@ -96,7 +107,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(custom-safe-themes (quote ("1c50040ec3b3480b1fec3a0e912cac1eb011c27dd16d087d61e72054685de345" "b3380cb88fcc06ac42577ba9c2701e4cf0e5e60466b62ae94c76aabc132fdcdd" "5999e12c8070b9090a2a1bbcd02ec28906e150bb2cdce5ace4f965c76cf30476" "8abee8a14e028101f90a2d314f1b03bed1cde7fd3f1eb945ada6ffc15b1d7d65" default)))
+ '(custom-safe-themes (quote ("aee1f5a2825f6752eb447c0d1b480b672c354adf3b012f607a753ad09cc9b942" "1c50040ec3b3480b1fec3a0e912cac1eb011c27dd16d087d61e72054685de345" "b3380cb88fcc06ac42577ba9c2701e4cf0e5e60466b62ae94c76aabc132fdcdd" "5999e12c8070b9090a2a1bbcd02ec28906e150bb2cdce5ace4f965c76cf30476" "8abee8a14e028101f90a2d314f1b03bed1cde7fd3f1eb945ada6ffc15b1d7d65" default)))
  '(erc-modules (quote (autojoin button completion fill irccontrols list match menu move-to-prompt netsplit networks noncommands notify readonly ring stamp track)))
  '(flymake-gui-warnings-enabled nil))
 (custom-set-faces
@@ -114,16 +125,16 @@
                         :background "black")
 
 ;;hide flycheck warnings
-(set-face-attribute 'flycheck-fringe-warning nil :foreground (face-attribute 'fringe :background ))
+;(set-face-attribute 'flycheck-fringe-warning nil :foreground (face-attribute 'fringe :background ))
 (set-face-attribute 'flycheck-warning nil :underline nil)
-
+(setq flycheck-highlighting-mode 'lines)
 (require 'socks)
 
 (when (load "erc" t)
 (setq erc-server "irc.freenode.net")
 
 ;;(setq erc-port "6697") ;;enable this for tls
-(setq erc-nick "Nick")
+(setq erc-nick "nick")
 (setq erc-pals '("pal"))
 (setq erc-hide-list '("JOIN" "PART" "QUIT"))
 (setq erc-notify-list '("pal"))
@@ -141,13 +152,19 @@
 (appt-activate 1)
 
 
+
+;(global-set-key (kbd "<f6>") (lambda()(if (get-buffer-window "nonnatropicale" visible) (message "hello") (lambda() 
+;                               (interactive)(split-window-below)
+;                               (interactive)(switch-to-buffer-other-window "nonnatropicale" ))))
+;)
+
 (defun close-if-exists (name)
 "close window if existing"
   (ignore-errors (delete-windows-on name ))
 )
 
 (defun erc-closeall ()
-  (mapcar 'close-if-exists '("pal0" "pal1") )
+  (mapcar 'close-if-exists '("win1" "win2") )
 )
 
 (defun toggle-buffer-visibility (buffername)
@@ -158,6 +175,7 @@
      )    
     (progn
       (split-window-below)
+      ; (switch-to-buffer buffername)
       (switch-to-buffer-other-window buffername      )
       ) 
     )
@@ -165,17 +183,58 @@
   
 
 
-(global-set-key (kbd "<f5>") (lambda() (interactive) (toggle-buffer-visibility "pal0")))
-(global-set-key (kbd "M-<f5>") (lambda() (interactive) (toggle-buffer-visibility "pal1")))
+(global-set-key (kbd "<f5>") (lambda() (interactive) (toggle-buffer-visibility "pal")))
+(global-set-key (kbd "M-<f5>") (lambda() (interactive) (toggle-buffer-visibility "pal_")))
 (global-set-key (kbd "S-<f5>") (lambda() (interactive) (toggle-buffer-visibility "irc.freenode.net:6667")))
 (global-set-key (kbd "<f9>") (lambda() (interactive) (erc-closeall)))
+(global-set-key (kbd "<muhenkan>") (lambda() (interactive) (erc-closeall)))
 
-(set-frame-parameter (selected-frame) 'alpha '(80 . 60))
-(add-to-list 'default-frame-alist '(alpha . (80 . 60)))
+
+
+(set-frame-parameter (selected-frame) 'alpha '(100 . 60))
+(add-to-list 'default-frame-alist '(alpha . (100 . 60)))
 
 
 (setq mouse-autoselect-window t)
 (menu-bar-mode 1)
-(global-unset-key (kbd "C-z"))
 
 (server-start)
+
+(global-unset-key (kbd "C-z"))
+(add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
+(scroll-bar-mode 1)
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; For folding
+;;;
+(require 'hideshow)
+;; C coding style
+(add-hook 'c-mode-hook
+          '(lambda ()
+	    (hs-minor-mode 1)))
+(add-hook 'c++-mode-hook
+	 '(lambda ()
+	    (hs-minor-mode 1)))
+;; Scheme coding style
+(add-hook 'scheme-mode-hook
+          '(lambda ()
+	    (hs-minor-mode 1)))
+;; Elisp coding style
+(add-hook 'emacs-lisp-mode-hook
+          '(lambda ()
+	    (hs-minor-mode 1)))
+;; Lisp coding style
+(add-hook 'lisp-mode-hook
+          '(lambda ()
+	    (hs-minor-mode 1)))
+;; Python coding style
+(add-hook 'python-mode-hook
+          '(lambda ()
+	    (hs-minor-mode 1)))
+;; 
+(define-key
+  global-map
+  (kbd "C-;") 'hs-toggle-hiding)

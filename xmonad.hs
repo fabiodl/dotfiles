@@ -92,7 +92,7 @@ main = do
  , normalBorderColor   =  "gray50"
          , focusedBorderColor =  "skyblue"
          ,  modMask = mod4Mask -- set the mod key to the windows key
- -- , startupHook = setWMName "LG3D"
+ , startupHook = setWMName "LG3D"
  , handleEventHook =
             handleEventHook gnomeConfig <+> fullscreenEventHook <+> handleTimerEvent
              ,manageHook = myManageHook <+> manageHook gnomeConfig 
@@ -116,9 +116,11 @@ myKeys=
  , ((mod4Mask , xK_Right), sendToScreen 1 >> viewScreen 1 >> windows W.swapMaster)
  , ((mod4Mask , xK_Up), sendMessage $ Toggle REFLECTX)
  , ((mod4Mask , xK_n),  XMonad.Actions.CycleWS.moveTo XMonad.Actions.CycleWS.Next XMonad.Actions.CycleWS.HiddenNonEmptyWS >> printWs)
+ , ((mod4Mask .|. shiftMask, xK_n),  XMonad.Actions.CycleWS.moveTo XMonad.Actions.CycleWS.Prev XMonad.Actions.CycleWS.HiddenNonEmptyWS >> printWs)
+ , ((mod4Mask .|. controlMask, xK_n),  XMonad.Actions.CycleWS.moveTo XMonad.Actions.CycleWS.Prev XMonad.Actions.CycleWS.EmptyWS >> printWs)
  , ((mod4Mask .|. shiftMask, xK_Up), swapNextScreen >> printWs)
  , ((mod4Mask , xK_i), spawn "google-chrome")
- , ((0, xK_F12), scratchPad) -- quake terminal
+ , ((mod4Mask, xK_F12), scratchPad) -- quake terminal
  , ((mod4Mask , xK_d), spawn "gjiten")   
  , ((mod4Mask , xK_p), spawn "dmenu_run -nb black -nf skyblue -sb skyblue -sf black ") 
         ]
@@ -138,7 +140,6 @@ mySTConfig = defaultSTConfig { --st_font = "xft:Droid Sans:pixelsize=28"
                          , st_fg   = "skyblue"
                          }
 
-
 scWork x= withWindowSet $ return . W.lookupWorkspace x
 spaced x=fmap (fmap (++" ")) x
 getWorkspacesString count=foldr (<+>) mempty ([spaced (scWork  x) | x <- [0..count-2]] ++[scWork (count-1)])
@@ -149,8 +150,8 @@ prettyPrinter :: D.Client -> PP
 prettyPrinter dbus = defaultPP
     { ppOutput   = dbusOutput dbus
     , ppTitle    = pangoColor "white" . wrap "<span font=\"Sans Bold 8\">" "</span>" .pangoSanitize
-    , ppCurrent  = pangoColor "lightsalmon" . wrap "<span font=\"Sans Bold 8\">{" "}</span>" . pangoSanitize
-    , ppVisible  = pangoColor "seagreen" . wrap "<span font=\"Sans Bold 8\">[" "]</span>" . pangoSanitize
+    , ppCurrent  = pangoColor "gold" . wrap "<span font=\"Sans Bold 8\">{" "}</span>" . pangoSanitize
+    , ppVisible  = pangoColor "lightsalmon" . wrap "<span font=\"Sans Bold 8\">[" "]</span>" . pangoSanitize
     , ppHidden   = pangoColor "white" . wrap "<span font=\"Sans Bold 8\">(" ")</span>" . pangoSanitize . noScratchPad
     , ppUrgent   = pangoColor "red"
     , ppLayout   = pangoColor "seagreen" . wrap "<span font=\"Sans Bold 8\">|" "|</span>"
