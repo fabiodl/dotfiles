@@ -159,7 +159,7 @@ prettyPrinter dbus = defaultPP
     , ppHidden   = pangoColor "white" . pangoFontWrap "(" ")" . pangoSanitize . onlyKnown
     , ppUrgent   = pangoColor "red"
     , ppLayout   = pangoColor "seagreen" . pangoFontWrap "|" "|"
-    , ppSep      = pangoFontWrap "" ""
+    , ppSep      = pangoFontWrap "" "" " "
     }
  where
     onlyKnown ws = if ws `elem` myWorkspaces then ws else ""
