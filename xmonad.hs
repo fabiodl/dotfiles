@@ -77,7 +77,7 @@ myWorkspaces = map show [1..9]
 
 
 myBgColor = "black"
-myFgColor = "orange"
+myFgColor = "skyblue"
 
 --for Prompt
 myXPConfig = def{
