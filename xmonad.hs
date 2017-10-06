@@ -159,11 +159,11 @@ prettyPrinter dbus = defaultPP
     , ppHidden   = pangoColor "white" . pangoFontWrap "(" ")" . pangoSanitize . onlyKnown
     , ppUrgent   = pangoColor "red"
     , ppLayout   = pangoColor "seagreen" . pangoFontWrap "|" "|"
-    , ppSep      = "<span font=\"Sans Bold 8\"> </span>"
+    , ppSep      = pangoFontWrap "" ""
     }
  where
     onlyKnown ws = if ws `elem` myWorkspaces then ws else ""
-   
+
 
 getWellKnownName :: D.Client -> IO ()
 getWellKnownName dbus = do
