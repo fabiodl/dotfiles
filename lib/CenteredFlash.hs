@@ -18,7 +18,7 @@ module  CenteredFlash
       -- $usage
       defaultSTConfig
     , handleTimerEvent
-    , flashText
+    , flashText'
     , ShowTextConfig(..)
     ) where
 
@@ -28,7 +28,6 @@ import Data.Monoid (mempty, All)
 import Prelude hiding (lookup)
 import XMonad
 import XMonad.StackSet (current,screen)
-import qualified XMonad.StackSet as S
 
 import XMonad.Util.Font (Align(AlignCenter)
                        , initXMF
@@ -95,11 +94,6 @@ handleTimerEvent (ClientMessageEvent _ _ _ dis _ mtyp d) = do
     mempty
 handleTimerEvent _ = mempty
 
--- | Shows a window in the center of the screen with the given text
-flashText :: ShowTextConfig
-    -> Rational -- ^ number of seconds
-    -> String -- ^ text to display   
-    -> X ()
 
 
 -- getScreenDim is from http://mntnoe.com/wp-content/uploads/2010/05/Panel.hs.html 
@@ -115,8 +109,13 @@ getScreenDim n = do
         [r]       -> return $ (fromIntegral $ rect_x r , fromIntegral $ rect_y r , fromIntegral $ rect_width r , fromIntegral $ rect_height r )
         otherwise -> return $ (fromIntegral $ rect_x rn, fromIntegral $ rect_y rn, fromIntegral $ rect_width rn, fromIntegral $ rect_height rn)
 
+-- | Shows a window in the center of the screen with the given text
+flashText' :: ShowTextConfig
+    -> Rational -- ^ number of seconds
+    -> String -- ^ text to display   
+    -> X ()
 
-flashText c i s = do
+flashText' c i s = do
   f <- initXMF (st_font c)
   d <- asks display
   sc <- gets $ fi . screen . current . windowset
