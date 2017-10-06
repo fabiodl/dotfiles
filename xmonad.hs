@@ -45,6 +45,7 @@ import qualified Data.Text.Lazy as TL
 
 import CenteredFlash
 
+
 myMouseBindings (XConfig {XMonad.modMask = modMask}) = M.fromList $ [
     -- mod-button1, Set the window to floating mode and move by dragging
     ((modMask, button1), (\w -> focus w >> mouseMoveWindow w))
@@ -136,18 +137,16 @@ main = do
     dbus <- D.connectSession
     getWellKnownName dbus
     xmonad $ ewmh gnomeConfig
-         { logHook = do
-                      -- fadeHook 
-                       dynamicLogWithPP (prettyPrinter dbus) 
-                     , mouseBindings = myMouseBindings  
-                     , layoutHook = smartBorders (   mkToggle (single REFLECTX) $ layoutHook gnomeConfig) ||| tabbed shrinkText  defaultTheme
-                     , normalBorderColor   =  myBgColor
-                     , focusedBorderColor =  myFgColor
-                     , modMask = mod4Mask -- set the mod key to the windows key
-                     , startupHook = setWMName "LG3D"
-                     , handleEventHook = handleEventHook gnomeConfig <+> fullscreenEventHook <+> handleTimerEvent
-                     , manageHook = myManageHook <+> manageHook gnomeConfig
-                     , workspaces = myWorkspaces
+         { logHook = dynamicLogWithPP (prettyPrinter dbus) -- <+> fadeHook
+         , mouseBindings = myMouseBindings
+         , layoutHook = smartBorders (   mkToggle (single REFLECTX) $ layoutHook gnomeConfig) ||| tabbed shrinkText  defaultTheme
+         , normalBorderColor   =  myBgColor
+         , focusedBorderColor =  myFgColor
+         , modMask = myModKey -- set the mod key to the windows key
+         , startupHook = setWMName "LG3D"
+         , handleEventHook = handleEventHook gnomeConfig <+> fullscreenEventHook <+> handleTimerEvent
+         , manageHook = myManageHook <+> manageHook gnomeConfig
+         , workspaces = myWorkspaces
          } `additionalKeys` myKeys
 
 
@@ -157,13 +156,13 @@ prettyPrinter dbus = defaultPP
     , ppTitle    = pangoColor "white" . wrap "<span font=\"Sans Bold 8\">" "</span>" .pangoSanitize
     , ppCurrent  = pangoColor "gold" . wrap "<span font=\"Sans Bold 8\">{" "}</span>" . pangoSanitize
     , ppVisible  = pangoColor "lightsalmon" . wrap "<span font=\"Sans Bold 8\">[" "]</span>" . pangoSanitize
-    , ppHidden   = pangoColor "white" . wrap "<span font=\"Sans Bold 8\">(" ")</span>" . pangoSanitize . noScratchPad
+    , ppHidden   = pangoColor "white" . wrap "<span font=\"Sans Bold 8\">(" ")</span>" . pangoSanitize . onlyKnown
     , ppUrgent   = pangoColor "red"
     , ppLayout   = pangoColor "seagreen" . wrap "<span font=\"Sans Bold 8\">|" "|</span>"
     , ppSep      = "<span font=\"Sans Bold 8\"> </span>"
     }
  where
-    noScratchPad ws = if ws == "NSP" then "" else ws
+    onlyKnown ws = if ws `elem` myWorkspaces then ws else ""
 
 getWellKnownName :: D.Client -> IO ()
 getWellKnownName dbus = do
