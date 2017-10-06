@@ -153,16 +153,17 @@ main = do
 prettyPrinter :: D.Client -> PP
 prettyPrinter dbus = defaultPP
     { ppOutput   = dbusOutput dbus
-    , ppTitle    = pangoColor "white" . wrap "<span font=\"Sans Bold 8\">" "</span>" .pangoSanitize
-    , ppCurrent  = pangoColor "gold" . wrap "<span font=\"Sans Bold 8\">{" "}</span>" . pangoSanitize
-    , ppVisible  = pangoColor "lightsalmon" . wrap "<span font=\"Sans Bold 8\">[" "]</span>" . pangoSanitize
-    , ppHidden   = pangoColor "white" . wrap "<span font=\"Sans Bold 8\">(" ")</span>" . pangoSanitize . onlyKnown
+    , ppTitle    = pangoColor "white" . pangoFontWrap "" "" .pangoSanitize
+    , ppCurrent  = pangoColor "gold" . pangoFontWrap"{" "}" . pangoSanitize
+    , ppVisible  = pangoColor "lightsalmon" . pangoFontWrap "[" "]" . pangoSanitize
+    , ppHidden   = pangoColor "white" . pangoFontWrap "(" ")" . pangoSanitize . onlyKnown
     , ppUrgent   = pangoColor "red"
-    , ppLayout   = pangoColor "seagreen" . wrap "<span font=\"Sans Bold 8\">|" "|</span>"
+    , ppLayout   = pangoColor "seagreen" . pangoFontWrap "|" "|"
     , ppSep      = "<span font=\"Sans Bold 8\"> </span>"
     }
  where
     onlyKnown ws = if ws `elem` myWorkspaces then ws else ""
+   
 
 getWellKnownName :: D.Client -> IO ()
 getWellKnownName dbus = do
@@ -182,6 +183,12 @@ pangoColor fg = wrap left right
   where
     left  = "<span foreground=\"" ++ fg ++ "\">"
     right = "</span>"
+
+pangoFontWrap :: String -> String -> (String->String)
+pangoFontWrap open close = wrap left right
+  where
+    left="<span font=\"Sans Bold 8\">"++open
+    right=close++"</span>"
 
 pangoSanitize :: String -> String
 pangoSanitize = foldr sanitize ""
