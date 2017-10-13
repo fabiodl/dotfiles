@@ -7,7 +7,7 @@ import qualified DBus as D
 import qualified DBus.Client as D
 import qualified Codec.Binary.UTF8.String as UTF8
 
-import XMonad.Layout.NoBorders
+import XMonad.Layout.NoBorders(smartBorders)
 import XMonad.Layout.Reflect
 import XMonad.Layout.MultiToggle
 import XMonad.Layout.Tabbed
@@ -44,6 +44,12 @@ import Data.Function (on)
 import qualified Data.Text.Lazy as TL
 
 import CenteredFlash
+import XMonad.Actions.Navigation2D
+
+import Data.Time.LocalTime
+import Text.Printf
+import XMonad.Util.XUtils
+
 
 
 myMouseBindings (XConfig {XMonad.modMask = modMask}) = M.fromList $ [
@@ -56,7 +62,6 @@ myMouseBindings (XConfig {XMonad.modMask = modMask}) = M.fromList $ [
     -- mod-button3, Set the window to floating mode and resize by dragging
     , ((modMask, button3), (\w -> focus w >> mouseResizeWindow w))
    
-    -- you may also bind events to the mouse scroll wheel (button4 and button5)
     , ((0,13 :: Button) , ( \w -> spawn "google-chrome" ))
     , ((0,10 :: Button) , ( \w -> spawn "gnome-terminal" )) 
     ]
@@ -75,8 +80,6 @@ myManageHook = composeAll
 
 myWorkspaces = map show [1..9]
 
-
-
 myBgColor = "black"
 myFgColor = "skyblue"
 
@@ -92,41 +95,51 @@ myXPConfig = def{
   , maxComplRows=Just 3 --not available in version 0.11
   }
 
-mySTConfig=defaultSTConfig{
-  st_fg=myFgColor
-  , st_bg=myBgColor
-  }
+
 
 myModKey= mod4Mask                  
 
-scratchPad = scratchpadSpawnActionTerminal "urxvt"
-dmenu = "dmenu_run -nb "++myBgColor++" -nf "++myFgColor++" -sb "++myFgColor++" -sf "++myBgColor 
 
+scratchPad = scratchpadSpawnActionTerminal "urxvt"
+dmenu c= "dmenu_run -nb \""++(bgColor c)++"\" -nf \""++(fgColor c)++"\" -sb \""++(fgColor c)++"\" -sf \""++(bgColor c)++"\""
+modm=mod4Mask
 myKeys=
  [ ((mod1Mask .|. shiftMask , xK_BackSpace), spawn "gnome-screensaver-command -l")
  , ((myModKey .|. shiftMask,   xK_q), spawn "xkill")
  , ((myModKey .|. shiftMask .|. controlMask,  xK_q), io exitSuccess)
- , ((myModKey , xK_g     ), windowPromptGoto  myXPConfig  >> printWs)
- , ((myModKey , xK_b     ), windowPromptBring myXPConfig)
- , ((myModKey , xK_p     ), shellPrompt myXPConfig)
- , ((myModKey .|. shiftMask , xK_p), spawn dmenu) 
- , ((myModKey , xK_Left), pushWindow (-1) >> windows W.swapMaster)
- , ((myModKey , xK_Right), pushWindow 1 >> windows W.swapMaster)
- , ((myModKey , xK_Up), sendMessage (Toggle REFLECTX) >> printWs)
+ , ((myModKey , xK_g     ), printWs >> colourXP windowPromptGoto  >> printWs)
+ , ((myModKey , xK_b     ), printWs >> colourXP windowPromptBring)
+ , ((myModKey , xK_p     ), colourXP shellPrompt)
+ , ((myModKey .|. shiftMask , xK_p), colourXP (spawn . dmenu) ) 
  , ((myModKey , xK_n),  moveTo Next HiddenNonEmptyWS >> printWs)
  , ((myModKey .|. shiftMask, xK_n), moveTo Prev HiddenNonEmptyWS >> printWs)
  , ((myModKey .|. controlMask, xK_n),  moveTo Next (WSIs newWorkspace) >> printWs)
- , ((myModKey .|. shiftMask, xK_Up), swapNextScreen >> printWs)
+ -- , ((myModKey .|. shiftMask, xK_Up), swapNextScreen >> printWs)
  , ((myModKey , xK_i), spawn "google-chrome")
  , ((myModKey, xK_F12), scratchPad) -- quake terminal
- , ((myModKey , xK_d), spawn "gjiten")   
-        ]
- ++
-        [
-  ((m .|. myModKey, k),   (windows $ f i) >> printWs) 
-         | (i, k) <- zip myWorkspaces [xK_1 .. xK_9]
-         , (f, m) <- [(lazyView, 0), (W.shift, shiftMask), (W.greedyView, controlMask)]
-        ]
+ , ((myModKey , xK_d), spawn "gjiten")
+ , ((myModKey, xK_s), sendMessage (Toggle REFLECTX) >> printWs)
+ , ((myModKey .|. shiftMask, xK_s), screenSwap L True >>printWs)
+ ]
+  ++
+    -- mod-{w,e,r} %! Switch to physical/Xinerama screens 1, 2, or 3
+    -- mod-shift-{w,e,r} %! Move client to screen 1, 2, or 3
+    [((myModKey .|. m, key), screenWorkspace sc >>= flip whenJust (windows . f) >>printWs)
+        | (key, sc) <- zip [xK_w, xK_e, xK_r] [0..]
+        , (f, m) <- [(W.view, 0), (W.shift , shiftMask)]]
+  ++
+  [
+    ((myModKey .|. m, k),   (windows $ f i) >> printWs) 
+    | (i, k) <- zip myWorkspaces [xK_1 .. xK_9]
+    , (f, m) <- [(lazyView, 0), (W.shift, shiftMask), (W.greedyView, controlMask)]
+  ]
+  ++
+  [
+  (( myModKey .|. m,k), a dir loop) |
+    (a,m,loop) <- [ (windowGo,0,False), (windowSwap,shiftMask,False), (windowToScreenMaster,controlMask,False), (screenGo,mod1Mask,True)] ,
+    (k,dir) <-[ (xK_Right, R), (xK_Left, L), (xK_Up, U), (xK_Down, D) ] 
+  ]
+  where windowToScreenMaster dir loop = windowToScreen dir loop >> screenGo dir loop >> windows W.swapMaster
 
 fadeHook = fadeInactiveLogHook fadeAmount
      where fadeAmount = 0.9
@@ -136,18 +149,18 @@ main :: IO ()
 main = do
     dbus <- D.connectSession
     getWellKnownName dbus
-    xmonad $ ewmh gnomeConfig
-         { logHook = dynamicLogWithPP (prettyPrinter dbus) -- <+> fadeHook
+    xmonad $ withNavigation2DConfig def $ ewmh gnomeConfig
+         { logHook = dynamicLogWithPP (prettyPrinter dbus) <+> (clockColor >>= setBorderColor)-- <+> fadeHook
          , mouseBindings = myMouseBindings
-         , layoutHook = smartBorders (   mkToggle (single REFLECTX) $ layoutHook gnomeConfig) ||| tabbed shrinkText  defaultTheme
+         , layoutHook =  smartBorders (   mkToggle (single REFLECTX) $ layoutHook gnomeConfig) ||| tabbed shrinkText  defaultTheme
          , normalBorderColor   =  myBgColor
          , focusedBorderColor =  myFgColor
-         , modMask = myModKey -- set the mod key to the windows key
+         , modMask = myModKey 
          , startupHook = setWMName "LG3D"
          , handleEventHook = handleEventHook gnomeConfig <+> fullscreenEventHook <+> handleTimerEvent
          , manageHook = myManageHook <+> manageHook gnomeConfig
          , workspaces = myWorkspaces
-         } `additionalKeys` myKeys
+         } `additionalKeys` myKeys 
 
 
 prettyPrinter :: D.Client -> PP
@@ -204,8 +217,6 @@ toUpper :: String -> String
 toUpper = TL.unpack . TL.toUpper .  TL.pack
 
 
--- variation of XMonad.Actions.PhysicalScreens, the looping behavior of getNeighbour (left of leftmost is rightmost) is removed
-
 cmpScreen' :: Rectangle -> Rectangle -> Ordering
 cmpScreen' (Rectangle x1 y1 _ _) (Rectangle x2 y2 _ _) = compare (y1,x1) (y2,x2)
 
@@ -213,20 +224,6 @@ getOrderedScreens :: X [ScreenId]
 getOrderedScreens =do w <- gets windowset
                       return (map W.screen $ DL.sortBy (cmpScreen' `on` (screenRect . W.screenDetail)) $ W.current w : W.visible w)
 
-getNeighbour' :: Int -> X ScreenId
-getNeighbour' direction = do w <- gets windowset
-                             ss <- getOrderedScreens
-                             let curPos = maybe 0 id $ DL.findIndex (== W.screen (W.current w)) ss
-                                 posL= max 0 (curPos + direction)                          
-                                 pos = min posL (length ss)  
-                             return $ ss !! pos
-pushWindow :: Int -> X ()
-pushWindow direction = do s <- getNeighbour' direction
-                          w <- screenWorkspace s
-                          whenJust w $ windows . W.shift  
-                          whenJust w $ windows . W.view
-
---for looping to empty, hidden and "standard" (no scratchpad etc.) workspaces
 
 newWorkspace:: X (WindowSpace -> Bool)
 newWorkspace = do hs <- gets (map W.tag . W.hidden . windowset)
@@ -240,10 +237,70 @@ newWorkspace = do hs <- gets (map W.tag . W.hidden . windowset)
 isVisible w ws = any ((w ==) . W.tag . W.workspace) (W.visible ws)
 lazyView w ws = if isVisible w ws then ws else W.view w ws
 
-workspaceOfScreen :: (ScreenId) -> X (Maybe WorkspaceId)
-workspaceOfScreen x =  withWindowSet $ return . W.lookupWorkspace x
 
-getWorkspacesString screens= foldr (<+>) mempty $ DL.intersperse (return (Just " ")) [workspaceOfScreen x | x<-screens]
-scWorkspaces = getOrderedScreens >>= getWorkspacesString
-printWs = scWorkspaces  >>= flashText' mySTConfig 1 .fromMaybe ""
+setBorderColor :: String -> X ()
+setBorderColor col = do d <- asks display
+                        px <- stringToPixel d col           
+                        ws <- gets (W.peek . windowset) --focused Window
+                        case ws of
+                          Nothing -> return ()
+                          Just win -> setWindowBorderWithFallback d win col px
 
+
+getWorkspacesString :: X String
+getWorkspacesString = do w <- gets windowset                         
+                         screens <- getOrderedScreens
+                         return $ foldr (++) "" (DL.intersperse " " [ highlight (W.currentTag w)  (fromMaybe "" $ W.lookupWorkspace sc w)  | sc<-screens]) where highlight curr ws = if curr==ws then "["++ws++"]" else ws
+                         
+
+
+colourXP :: (XPConfig -> X() )  -> X()
+colourXP f = do c <-clockColor
+                f myXPConfig{fgColor=c
+                            ,bgHLight=c
+                            ,borderColor=c
+                            }
+
+printWs :: X ()
+printWs = do text <- getWorkspacesString
+             c <-clockColor
+             flashText' defaultSTConfig{st_bg=myBgColor, st_fg=c} 1 text
+
+clockColor :: X String
+clockColor = do now<-io getTime
+                return (timeToColor now)
+
+
+timeToColor :: TimeOfDay-> String
+timeToColor time = let maxTime = 3600.0*23.0+60.0*59+61.0  :: Float
+                       hue = 2*360.0/maxTime *(  3600.0*(fromIntegral $ todHour time ) --2 cycles a day
+                                              +  60.0* (fromIntegral $ todMin time)
+                                              + realToFrac(todSec time))   :: Float
+                       color = hsv hue 0.43 0.92
+                       [r,g,b]= map (round . (*255)) color ::[Integer]
+                   in printf "#%02X%02X%02X" r g b 
+
+getTime :: IO TimeOfDay                      
+getTime = fmap (localTimeOfDay . zonedTimeToLocalTime) getZonedTime
+
+
+
+hsv :: (RealFrac a, Ord a) => a -> a -> a -> [a]
+hsv h s v = case hi of
+    0 -> [v,t,p]
+    1 -> [q,v,p]
+    2 -> [p,v,t]
+    3 -> [p,q,v]
+    4 -> [t,p,v]
+    5 -> [v,p,q]
+ where
+  hi = floor (h/60) `mod` 6
+  f = mod1 (h/60)
+  p = v*(1-s)
+  q = v*(1-f*s)
+  t = v*(1-(1-f)*s)
+
+mod1 x | pf < 0 = pf+1
+       | otherwise = pf
+ where
+  (_,pf) = properFraction x
