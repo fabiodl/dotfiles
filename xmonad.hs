@@ -250,7 +250,8 @@ setBorderColor col = do d <- asks display
 getWorkspacesString :: X String
 getWorkspacesString = do w <- gets windowset                         
                          screens <- getOrderedScreens
-                         return $ foldr (++) "" (DL.intersperse " " [ highlight (W.currentTag w)  (fromMaybe "" $ W.lookupWorkspace sc w)  | sc<-screens]) where highlight curr ws = if curr==ws then "["++ws++"]" else ws
+                         return $ foldr (++) "" (DL.intersperse " " [ highlight (W.currentTag w)  (fromMaybe "" $ W.lookupWorkspace sc w)  | sc<-screens])
+                         where highlight curr ws = if curr==ws then "["++ws++"]" else ws
                          
 
 
