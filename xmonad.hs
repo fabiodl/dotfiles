@@ -81,7 +81,7 @@ myManageHook = composeAll
 myWorkspaces = map show [1..9]
 
 myBgColor = "black"
-myFgColor = "skyblue"
+myFgColor = "black"
 
 --for Prompt
 myXPConfig = def{
@@ -274,20 +274,24 @@ clockColor = do now<-io getTime
 
 timeToColor :: TimeOfDay-> String
 timeToColor time = let maxTime = 3600.0*23.0+60.0*59+61.0  :: Float
-                       hue = 2*360.0/maxTime *(  3600.0*(fromIntegral $ todHour time ) --2 cycles a day
+                       theta = 2*2*pi/maxTime *(  3600.0*(fromIntegral $ todHour time ) --2 cycles a day
                                               +  60.0* (fromIntegral $ todMin time)
                                               + realToFrac(todSec time))   :: Float
-                       color = hsv hue 0.43 0.92
-                       [r,g,b]= map (round . (*255)) color ::[Integer]
-                   in printf "#%02X%02X%02X" r g b 
-
+                       [c,s]= [cos(theta),sin(theta)]
+                       hue = clip $ -0.363*c+0.101*s+0.379
+                       sat = clip $ 0.100*c+0.360*s+0.758
+                       val = clip $ 0.014*c+0.050*s+0.966
+                       color = hsv' hue sat val
+                       [r,g,b]= map (round . (*255). clip ) color ::[Integer]
+                   in printf "#%02X%02X%02X" r g b where clip x = min 1.0 $ max 0.0 x
+  
 getTime :: IO TimeOfDay                      
 getTime = fmap (localTimeOfDay . zonedTimeToLocalTime) getZonedTime
 
 
-
-hsv :: (RealFrac a, Ord a) => a -> a -> a -> [a]
-hsv h s v = case hi of
+--takes hue values in the range 0-1
+hsv' :: (RealFrac a, Ord a) => a -> a -> a -> [a]
+hsv' h s v = case hi of
     0 -> [v,t,p]
     1 -> [q,v,p]
     2 -> [p,v,t]
@@ -295,8 +299,8 @@ hsv h s v = case hi of
     4 -> [t,p,v]
     5 -> [v,p,q]
  where
-  hi = floor (h/60) `mod` 6
-  f = mod1 (h/60)
+  hi = floor (6*h) `mod` 6
+  f = mod1 (6*h)
   p = v*(1-s)
   q = v*(1-f*s)
   t = v*(1-(1-f)*s)
