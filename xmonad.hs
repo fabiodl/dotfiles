@@ -16,6 +16,8 @@ import XMonad.Hooks.DynamicLog
 import XMonad.Util.EZConfig(additionalKeys)
 import XMonad.Hooks.SetWMName
 import XMonad.Hooks.EwmhDesktops
+import XMonad.Hooks.UrgencyHook
+
 
 import System.IO
 import System.Exit
@@ -149,7 +151,9 @@ main :: IO ()
 main = do
     dbus <- D.connectSession
     getWellKnownName dbus
-    xmonad $ withNavigation2DConfig def $ ewmh gnomeConfig
+    xmonad $ withUrgencyHook NoUrgencyHook
+           $ withNavigation2DConfig def
+           $ ewmh gnomeConfig
          { logHook = dynamicLogWithPP (prettyPrinter dbus) <+> (clockColor >>= setBorderColor)-- <+> fadeHook
          , mouseBindings = myMouseBindings
          , layoutHook =  smartBorders (   mkToggle (single REFLECTX) $ layoutHook gnomeConfig) ||| tabbed shrinkText  defaultTheme
@@ -170,7 +174,7 @@ prettyPrinter dbus = defaultPP
     , ppCurrent  = pangoColor "gold" . pangoFontWrap"{" "}" . pangoSanitize
     , ppVisible  = pangoColor "lightsalmon" . pangoFontWrap "[" "]" . pangoSanitize
     , ppHidden   = pangoColor "white" . pangoFontWrap "(" ")" . pangoSanitize . onlyKnown
-    , ppUrgent   = pangoColor "red"
+    , ppUrgent   = pangoColor "red" . pangoFontWrap "!" "!" . pangoSanitize
     , ppLayout   = pangoColor "seagreen" . pangoFontWrap "|" "|"
     , ppSep      = pangoFontWrap "" "" " "
     }
