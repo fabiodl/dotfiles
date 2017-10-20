@@ -297,7 +297,7 @@ clockColor = do now<-io getTime
 
 timeToColor :: TimeOfDay-> String
 timeToColor time = let maxTime = 3600.0*23.0+60.0*59+61.0  :: Float
-                       theta = 1000*2*2*pi/maxTime *(  3600.0*(fromIntegral $ todHour time ) --2 cycles a day
+                       theta = 2*2*pi/maxTime *(  3600.0*(fromIntegral $ todHour time ) --2 cycles a day
                                               +  60.0* (fromIntegral $ todMin time)
                                               + realToFrac(todSec time))   :: Float
                        [c,s]= [cos(theta),sin(theta)]
