@@ -1,74 +1,66 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import XMonad
+import qualified Data.Map  as M
+import qualified Data.List as DL
+import Data.Maybe
+import Data.Function (on)
+import qualified Data.Text.Lazy as TL
+import Data.Time.LocalTime
+import Text.Printf
+
+import XMonad hiding ( (|||) )
 import XMonad.Config.Gnome
 
 import qualified DBus as D
 import qualified DBus.Client as D
 import qualified Codec.Binary.UTF8.String as UTF8
+import System.Exit
+
+import qualified XMonad.StackSet as W
 
 import XMonad.Layout.NoBorders(smartBorders)
 import XMonad.Layout.Reflect
 import XMonad.Layout.MultiToggle
-import XMonad.Layout.Tabbed
+
+import XMonad.Layout.LayoutCombinators 
+import XMonad.Layout.Renamed
 
 import XMonad.Hooks.DynamicLog
 import XMonad.Util.EZConfig(additionalKeys)
 import XMonad.Hooks.SetWMName
 import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.UrgencyHook
+import XMonad.Hooks.ManageDocks
 
-
-import System.IO
-import System.Exit
-import qualified XMonad.StackSet as W
-import qualified Data.Map        as M
-
-import XMonad.Actions.PhysicalScreens
-import XMonad.Actions.UpdatePointer
 import XMonad.Actions.CycleWS
-import XMonad.Actions.WorkspaceNames
-import XMonad.Prompt
-import XMonad.Prompt.Window
-
-import XMonad.Util.Scratchpad
-import Data.Maybe
-import XMonad.Util.Loggers (logCurrent)
-import Data.Monoid
-import XMonad.Layout.IndependentScreens
-
-import XMonad.Prompt.Shell
-import qualified Data.List as DL
-
-import XMonad.Hooks.FadeInactive
-import Data.Function (on)
-
-import qualified Data.Text.Lazy as TL
-
-import CenteredFlash
 import XMonad.Actions.Navigation2D
 
-import Data.Time.LocalTime
-import Text.Printf
-import XMonad.Util.XUtils
+import XMonad.Prompt
+import XMonad.Prompt.Window
+import XMonad.Prompt.Shell
 
+import XMonad.Util.Scratchpad
+import XMonad.Util.XUtils(stringToPixel)
 
+import CenteredFlash
+import DynamicDecoration
 
 myMouseBindings (XConfig {XMonad.modMask = modMask}) = M.fromList $ [
     -- mod-button1, Set the window to floating mode and move by dragging
     ((modMask, button1), (\w -> focus w >> mouseMoveWindow w))
-
     -- mod-button2, Raise the window to the top of the stack
-    , ((modMask, button2), (\w -> focus w >> windows W.swapMaster))
-
+    , ((modMask, button2), (\w -> focus w >> windows W.swapMaster))    
     -- mod-button3, Set the window to floating mode and resize by dragging
     , ((modMask, button3), (\w -> focus w >> mouseResizeWindow w))
-   
+
+    , ((modMask, button4), (\w ->  windows W.focusUp))
+    , ((modMask, button5), (\w ->  windows W.focusDown))
+    , ((modMask.|.controlMask, button4), (\w ->  moveTo Prev (WSIs $myHiddenWS AnyWS) >> printWs))
+    , ((modMask.|.controlMask, button5), (\w ->  moveTo Next (WSIs $myHiddenWS AnyWS) >> printWs))
+    
     , ((0,13 :: Button) , ( \w -> spawn "google-chrome" ))
     , ((0,10 :: Button) , ( \w -> spawn "gnome-terminal" )) 
     ]
-
-
 
 myManageHook = composeAll
     [ className =? "Gimp"        --> doFloat
@@ -78,7 +70,6 @@ myManageHook = composeAll
     , className =? "Cairo-dock" --> doFloat
     , className =? "platform-Emulicious" -->doFloat
     ]  <+> scratchpadManageHook (W.RationalRect 0 0 1 0.3)
-
 
 myWorkspaces = map show [1..9]
 
@@ -97,10 +88,7 @@ myXPConfig = def{
   , maxComplRows=Just 3 --not available in version 0.11
   }
 
-
-
 myModKey= mod4Mask                  
-
 
 scratchPad = scratchpadSpawnActionTerminal "urxvt"
 dmenu c= "dmenu_run -nb \""++(bgColor c)++"\" -nf \""++(fgColor c)++"\" -sb \""++(fgColor c)++"\" -sf \""++(bgColor c)++"\""
@@ -109,19 +97,22 @@ myKeys=
  [ ((mod1Mask .|. shiftMask , xK_BackSpace), spawn "gnome-screensaver-command -l")
  , ((myModKey .|. shiftMask,   xK_q), spawn "xkill")
  , ((myModKey .|. shiftMask .|. controlMask,  xK_q), io exitSuccess)
+ , ((myModKey,               xK_space ), sendMessage NextLayout) -- %! Rotate through the available layout algorithms
  , ((myModKey , xK_g     ), printWs >> colourXP windowPromptGoto  >> printWs)
  , ((myModKey , xK_b     ), printWs >> colourXP windowPromptBring)
  , ((myModKey , xK_p     ), colourXP shellPrompt)
  , ((myModKey .|. shiftMask , xK_p), colourXP (spawn . dmenu) ) 
- , ((myModKey , xK_n),  moveTo Next HiddenNonEmptyWS >> printWs)
- , ((myModKey .|. shiftMask, xK_n), moveTo Prev HiddenNonEmptyWS >> printWs)
- , ((myModKey .|. controlMask, xK_n),  moveTo Next (WSIs newWorkspace) >> printWs)
- -- , ((myModKey .|. shiftMask, xK_Up), swapNextScreen >> printWs)
+ , ((myModKey , xK_n),  moveTo Next (WSIs $myHiddenWS NonEmptyWS) >> printWs)
+ , ((myModKey .|. shiftMask, xK_n), moveTo Prev (WSIs $ myHiddenWS NonEmptyWS)  >> printWs)
+ , ((myModKey .|. controlMask, xK_n),  moveTo Next (WSIs $ myHiddenWS EmptyWS) >> printWs)
  , ((myModKey , xK_i), spawn "google-chrome")
- , ((myModKey, xK_F12), scratchPad) -- quake terminal
  , ((myModKey , xK_d), spawn "gjiten")
+ , ((myModKey, xK_F12), scratchPad) -- quake terminal
  , ((myModKey, xK_s), sendMessage (Toggle REFLECTX) >> printWs)
  , ((myModKey .|. shiftMask, xK_s), screenSwap L True >>printWs)
+ , ((modm, xK_v), sendMessage $ JumpToLayout "Tile")
+ , ((modm.|.shiftMask, xK_v), (sendMessage $ JumpToLayout "Tab") )
+ , ((modm.|.controlMask, xK_v), sendMessage $ JumpToLayout "Full") 
  ]
   ++
     -- mod-{w,e,r} %! Switch to physical/Xinerama screens 1, 2, or 3
@@ -143,20 +134,39 @@ myKeys=
   ]
   where windowToScreenMaster dir loop = windowToScreen dir loop >> screenGo dir loop >> windows W.swapMaster
 
-fadeHook = fadeInactiveLogHook fadeAmount
-     where fadeAmount = 0.9
 
+myTiledLayout= renamed [Replace "Tile"] $ mkToggle (single REFLECTX) $ tall ||| Mirror(tall) 
+  where tall =  Tall 1 (3/100) (1/2)
   
+myTabbedLayout = renamed [Replace "Tab"] $ mkToggle(single REFLECTX) $ dynamicTabs D def{
+  theme=do col<-clockColor
+           return Theme{ activeColor         = col
+                       , inactiveColor       = "black"
+                       , urgentColor         = "#FFFF00"
+                       , activeBorderColor   = "#FFFFFF"
+                       , inactiveBorderColor = "#BBBBBB"
+                       , urgentBorderColor   = "##00FF00"
+                       , activeTextColor     = "black"
+                       , inactiveTextColor   = col
+                       , urgentTextColor     = "#FF0000"
+                       , fontName            = "-misc-fixed-*-*-*-*-10-*-*-*-*-*-*-*"
+                       , decoWidth           = 200
+                       , decoHeight          = 20
+                       , windowTitleAddons   = []
+                       , windowTitleIcons    = []
+                       }  
+  }
+                                                                                       
 main :: IO ()
 main = do
     dbus <- D.connectSession
     getWellKnownName dbus
-    xmonad $ withUrgencyHook NoUrgencyHook
+    xmonad $ docks $ withUrgencyHook NoUrgencyHook
            $ withNavigation2DConfig def
-           $ ewmh gnomeConfig
-         { logHook = dynamicLogWithPP (prettyPrinter dbus) <+> (clockColor >>= setBorderColor)-- <+> fadeHook
+           $ ewmh gnomeConfig           
+         { logHook = dynamicLogWithPP (prettyPrinter dbus)  <+> (clockColor >>= setBorderColor)-- <+> fadeHook
          , mouseBindings = myMouseBindings
-         , layoutHook =  smartBorders (   mkToggle (single REFLECTX) $ layoutHook gnomeConfig) ||| tabbed shrinkText  defaultTheme
+         , layoutHook =    avoidStruts $ smartBorders ( myTiledLayout ||| myTabbedLayout ||| Full ) 
          , normalBorderColor   =  myBgColor
          , focusedBorderColor =  myFgColor
          , modMask = myModKey 
@@ -165,7 +175,7 @@ main = do
          , manageHook = myManageHook <+> manageHook gnomeConfig
          , workspaces = myWorkspaces
          } `additionalKeys` myKeys 
-
+  
 
 prettyPrinter :: D.Client -> PP
 prettyPrinter dbus = defaultPP
@@ -229,12 +239,20 @@ getOrderedScreens =do w <- gets windowset
                       return (map W.screen $ DL.sortBy (cmpScreen' `on` (screenRect . W.screenDetail)) $ W.current w : W.visible w)
 
 
-newWorkspace:: X (WindowSpace -> Bool)
-newWorkspace = do hs <- gets (map W.tag . W.hidden . windowset)
-                  let empty = isNothing . W.stack
-                  let hidden = (\w -> W.tag w `elem` hs)
-                  let knownWs = (\w -> W.tag w `elem` myWorkspaces) 
-                  return (\w -> hidden w && empty w && knownWs w)
+
+
+myHiddenWS:: WSType -> X (WindowSpace -> Bool)
+myHiddenWS t= do hs <- gets (map W.tag . W.hidden . windowset)
+                 let e = case t of
+                      EmptyWS-> isNothing . W.stack
+                      NonEmptyWS -> not .isNothing . W.stack
+                      _ -> (\_ -> True)
+
+                 let hidden = (\w -> W.tag w `elem` hs)
+                 let knownWs = (\w -> W.tag w `elem` myWorkspaces) 
+                 return (\w -> hidden w && e w && knownWs w)
+
+
 
 
 --adapted from http://xmonad.haskell.narkive.com/EToEJM1K/normal-rather-than-greedy-view-disable-screen-focus-switching
@@ -249,8 +267,9 @@ setBorderColor col = do d <- asks display
                         case ws of
                           Nothing -> return ()
                           Just win -> setWindowBorderWithFallback d win col px
+                    
 
-
+               
 getWorkspacesString :: X String
 getWorkspacesString = do w <- gets windowset                         
                          screens <- getOrderedScreens
@@ -278,7 +297,7 @@ clockColor = do now<-io getTime
 
 timeToColor :: TimeOfDay-> String
 timeToColor time = let maxTime = 3600.0*23.0+60.0*59+61.0  :: Float
-                       theta = 2*2*pi/maxTime *(  3600.0*(fromIntegral $ todHour time ) --2 cycles a day
+                       theta = 1000*2*2*pi/maxTime *(  3600.0*(fromIntegral $ todHour time ) --2 cycles a day
                                               +  60.0* (fromIntegral $ todMin time)
                                               + realToFrac(todSec time))   :: Float
                        [c,s]= [cos(theta),sin(theta)]
@@ -313,3 +332,4 @@ mod1 x | pf < 0 = pf+1
        | otherwise = pf
  where
   (_,pf) = properFraction x
+

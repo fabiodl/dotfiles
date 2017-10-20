@@ -1,8 +1,8 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 -----------------------------------------------------------------------------
 -- |
--- Module      :  XMonad.Actions.ShowText
--- Copyright   :  (c) Mario Pastorelli (2012)
+-- Module      :  CenteredFlash
+-- Copyright   :  (c) Mario Pastorelli (2012) , 
 -- License     :  BSD-style (see xmonad/LICENSE)
 --
 -- Maintainer  :  pastorelli.mario@gmail.com
