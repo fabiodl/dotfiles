@@ -40,8 +40,11 @@ import XMonad.Util.Font
 import XMonad.Util.Image
 import XMonad.Layout.Decoration hiding (Decoration (..), DecorationState, OrigWin, DecorationStyle (..),decoration ,findWindowByDecoration )
 
+import qualified XMonad.Util.ExtensibleState as XS
+
 import XMonad.Util.Types (Direction2D(..))
 import XMonad.Layout.Simplest
+
 -- $usage
 -- This module is intended for layout developers, who want to decorate
 -- their layouts. End users will not find here very much for them.
@@ -74,7 +77,8 @@ instance Read (DynamicTheme) where readsPrec _ s = [(def,s)]
 instance Default DynamicTheme where
   def = DynamicTheme {theme=return def}
 
-
+instance ExtensionClass Theme where
+  initialValue = def
 
 -- | The 'Decoration' state component, where the list of decorated
 -- window's is zipped with a list of decoration. A list of decoration
@@ -137,8 +141,10 @@ instance (DecorationStyle ds Window, Shrinker s) => LayoutModifier (DynamicDecor
 
     redoLayout (DynamicDecoration st sh dynt ds) sc (Just stack) wrs
         | I Nothing  <- st = do t <- theme dynt
+                                XS.put t
                                 initState t ds sc stack wrs >>= (\s ->processState s t)
         | I (Just s) <- st = do t<- theme dynt
+                                XS.put t
                                 let dwrs  = decos s
                                     (d,a) = curry diff (get_ws dwrs) ws
                                     toDel = todel d dwrs
@@ -189,10 +195,10 @@ instance (DecorationStyle ds Window, Shrinker s) => LayoutModifier (DynamicDecor
                                 return (dwrs_to_wrs ndwrs, Just (DynamicDecoration (I (Just (s {decos = ndwrs}))) sh dynt ds))
 
     handleMess (DynamicDecoration (I (Just s@(DS {decos = dwrs}))) sh dynt ds) m
-        | Just e <- fromMessage m                = do t<- theme dynt
+        | Just e <- fromMessage m                = do t<- XS.get
                                                       decorationEventHook ds s e
                                                       -- the following causes a redraw when typing or moving the mouse
-                                                      -- handleEvent sh t s e 
+                                                      handleEvent sh t s e 
                                                       return Nothing
         | Just Hide             <- fromMessage m = do hideDecos (map snd dwrs)
                                                       return Nothing
