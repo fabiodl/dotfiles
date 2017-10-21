@@ -68,9 +68,9 @@ dynamicTabs location theme = dynamicDecoration shrinkText theme (Tabbed  locatio
 
 newtype DynamicTheme = DynamicTheme { theme:: X Theme}
 
-instance Show (DynamicTheme) 
+instance Show (DynamicTheme) where show _ = ""
 
-instance Read (DynamicTheme) 
+instance Read (DynamicTheme) where readsPrec _ s = [(def,s)]
 instance Default DynamicTheme where
   def = DynamicTheme {theme=return def}
 
