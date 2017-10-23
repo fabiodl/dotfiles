@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings,FlexibleContexts#-}
 
 import qualified Data.Map  as M
 import qualified Data.List as DL

@@ -23,6 +23,8 @@
     auto-complete
     mozc
     jedi
+    magit
+    haskell-mode
 ))
 
 (mapc #'(lambda (package)
@@ -107,9 +109,16 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(custom-safe-themes (quote ("aee1f5a2825f6752eb447c0d1b480b672c354adf3b012f607a753ad09cc9b942" "1c50040ec3b3480b1fec3a0e912cac1eb011c27dd16d087d61e72054685de345" "b3380cb88fcc06ac42577ba9c2701e4cf0e5e60466b62ae94c76aabc132fdcdd" "5999e12c8070b9090a2a1bbcd02ec28906e150bb2cdce5ace4f965c76cf30476" "8abee8a14e028101f90a2d314f1b03bed1cde7fd3f1eb945ada6ffc15b1d7d65" default)))
- '(erc-modules (quote (autojoin button completion fill irccontrols list match menu move-to-prompt netsplit networks noncommands notify readonly ring stamp track)))
- '(flymake-gui-warnings-enabled nil))
+ '(custom-safe-themes
+   (quote
+    ("aee1f5a2825f6752eb447c0d1b480b672c354adf3b012f607a753ad09cc9b942" "1c50040ec3b3480b1fec3a0e912cac1eb011c27dd16d087d61e72054685de345" "b3380cb88fcc06ac42577ba9c2701e4cf0e5e60466b62ae94c76aabc132fdcdd" "5999e12c8070b9090a2a1bbcd02ec28906e150bb2cdce5ace4f965c76cf30476" "8abee8a14e028101f90a2d314f1b03bed1cde7fd3f1eb945ada6ffc15b1d7d65" default)))
+ '(erc-modules
+   (quote
+    (autojoin button completion fill irccontrols list match menu move-to-prompt netsplit networks noncommands notify readonly ring stamp track)))
+ '(flymake-gui-warnings-enabled nil)
+ '(package-selected-packages
+   (quote
+    (magit tangotango-theme py-autopep8 mozc jedi flycheck-pyflakes elpy ein better-defaults))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
