@@ -45,18 +45,20 @@ import XMonad.Util.XUtils(stringToPixel)
 import CenteredFlash
 import DynamicDecoration
 
-myMouseBindings (XConfig {XMonad.modMask = modMask}) = M.fromList $ [
-    -- mod-button1, Set the window to floating mode and move by dragging
-    ((modMask, button1), (\w -> focus w >> mouseMoveWindow w))
-    -- mod-button2, Raise the window to the top of the stack
-    , ((modMask, button2), (\w -> focus w >> windows W.swapMaster))    
-    -- mod-button3, Set the window to floating mode and resize by dragging
-    , ((modMask, button3), (\w -> focus w >> mouseResizeWindow w))
+myModKey = mod4Mask                  
 
-    , ((modMask, button4), (\w ->  windows W.focusUp))
-    , ((modMask, button5), (\w ->  windows W.focusDown))
-    , ((modMask.|.controlMask, button4), (\w ->  moveTo Prev (WSIs $myHiddenWS AnyWS) >> printWs))
-    , ((modMask.|.controlMask, button5), (\w ->  moveTo Next (WSIs $myHiddenWS AnyWS) >> printWs))
+myMouseBindings (XConfig {XMonad.modMask = myModKey}) = M.fromList $ [
+    -- mod-button1, Set the window to floating mode and move by dragging
+    ((myModKey, button1), (\w -> focus w >> mouseMoveWindow w))
+    -- mod-button2, Raise the window to the top of the stack
+    , ((myModKey, button2), (\w -> focus w >> windows W.swapMaster))    
+    -- mod-button3, Set the window to floating mode and resize by dragging
+    , ((myModKey, button3), (\w -> focus w >> mouseResizeWindow w))
+
+    , ((myModKey, button4), (\w ->  windows W.focusUp))
+    , ((myModKey, button5), (\w ->  windows W.focusDown))
+    , ((myModKey.|.controlMask, button4), (\w ->  moveTo Prev (WSIs $myHiddenWS AnyWS) >> printWs))
+    , ((myModKey.|.controlMask, button5), (\w ->  moveTo Next (WSIs $myHiddenWS AnyWS) >> printWs))
     
     , ((0,13 :: Button) , ( \w -> spawn "google-chrome" ))
     , ((0,10 :: Button) , ( \w -> spawn "gnome-terminal" )) 
@@ -88,11 +90,10 @@ myXPConfig = def{
   , maxComplRows=Just 3 --not available in version 0.11
   }
 
-myModKey= mod4Mask                  
 
 scratchPad = scratchpadSpawnActionTerminal "urxvt"
 dmenu c= "dmenu_run -nb \""++(bgColor c)++"\" -nf \""++(fgColor c)++"\" -sb \""++(fgColor c)++"\" -sf \""++(bgColor c)++"\""
-modm=mod4Mask
+
 myKeys=
  [ ((mod1Mask .|. shiftMask , xK_BackSpace), spawn "gnome-screensaver-command -l")
  , ((myModKey .|. shiftMask,   xK_q), spawn "xkill")
@@ -110,9 +111,9 @@ myKeys=
  , ((myModKey, xK_F12), scratchPad) -- quake terminal
  , ((myModKey, xK_s), sendMessage (Toggle REFLECTX) >> printWs)
  , ((myModKey .|. shiftMask, xK_s), screenSwap L True >>printWs)
- , ((modm, xK_v), sendMessage $ JumpToLayout "Tile")
- , ((modm.|.shiftMask, xK_v), (sendMessage $ JumpToLayout "Tab") )
- , ((modm.|.controlMask, xK_v), sendMessage $ JumpToLayout "Full") 
+ , ((myModKey, xK_v), sendMessage $ JumpToLayout "Tile")
+ , ((myModKey .|. shiftMask, xK_v), (sendMessage $ JumpToLayout "Tab") )
+ , ((myModKey .|. controlMask, xK_v), sendMessage $ JumpToLayout "Full") 
  ]
   ++
     -- mod-{w,e,r} %! Switch to physical/Xinerama screens 1, 2, or 3
