@@ -42,6 +42,7 @@
 )
 
 (global-linum-mode t) ;; enable line numbers globally
+(setq column-number-mode t) ;;column number
 
 ;; PYTHON CONFIGURATION
 ;; --------------------------------------
@@ -212,6 +213,7 @@
 (global-unset-key (kbd "C-z"))
 (add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
 (scroll-bar-mode 1)
+
 
 
 
