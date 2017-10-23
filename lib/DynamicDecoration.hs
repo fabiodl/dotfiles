@@ -77,8 +77,12 @@ instance Read (DynamicTheme) where readsPrec _ s = [(def,s)]
 instance Default DynamicTheme where
   def = DynamicTheme {theme=return def}
 
-instance ExtensionClass Theme where
-  initialValue = def
+
+
+data StoredTheme = StoredTheme{lastTheme::Theme} deriving Typeable
+instance ExtensionClass StoredTheme where
+  initialValue = StoredTheme def
+
 
 -- | The 'Decoration' state component, where the list of decorated
 -- window's is zipped with a list of decoration. A list of decoration
@@ -141,10 +145,10 @@ instance (DecorationStyle ds Window, Shrinker s) => LayoutModifier (DynamicDecor
 
     redoLayout (DynamicDecoration st sh dynt ds) sc (Just stack) wrs
         | I Nothing  <- st = do t <- theme dynt
-                                XS.put t
+                                XS.put $ StoredTheme t
                                 initState t ds sc stack wrs >>= (\s ->processState s t)
         | I (Just s) <- st = do t<- theme dynt
-                                XS.put t
+                                XS.put $ StoredTheme t
                                 let dwrs  = decos s
                                     (d,a) = curry diff (get_ws dwrs) ws
                                     toDel = todel d dwrs
@@ -195,7 +199,8 @@ instance (DecorationStyle ds Window, Shrinker s) => LayoutModifier (DynamicDecor
                                 return (dwrs_to_wrs ndwrs, Just (DynamicDecoration (I (Just (s {decos = ndwrs}))) sh dynt ds))
 
     handleMess (DynamicDecoration (I (Just s@(DS {decos = dwrs}))) sh dynt ds) m
-        | Just e <- fromMessage m                = do t<- XS.get
+        | Just e <- fromMessage m                = do storedTheme <- XS.get
+                                                      let t = lastTheme storedTheme
                                                       decorationEventHook ds s e
                                                       -- the following causes a redraw when typing or moving the mouse
                                                       handleEvent sh t s e 
