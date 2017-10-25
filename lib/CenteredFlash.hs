@@ -16,7 +16,7 @@
 module  CenteredFlash
     ( -- * Usage
       -- $usage
-      defaultSTConfig
+      def
     , handleTimerEvent
     , flashText'
     , ShowTextConfig(..)
@@ -77,8 +77,8 @@ data ShowTextConfig =
         , st_fg   :: String -- ^ Foreground color
     }
 
-defaultSTConfig :: ShowTextConfig
-defaultSTConfig =
+instance Default ShowTextConfig where
+  def =
     STC { st_font = "-misc-fixed-*-*-*-*-20-*-*-*-*-*-*-*"
         , st_bg   = "black"
         , st_fg   = "white"

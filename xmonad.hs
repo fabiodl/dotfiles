@@ -179,7 +179,7 @@ main = do
   
 
 prettyPrinter :: D.Client -> PP
-prettyPrinter dbus = defaultPP
+prettyPrinter dbus = def
     { ppOutput   = dbusOutput dbus
     , ppTitle    = pangoColor "white" . pangoFontWrap "" "" .pangoSanitize
     , ppCurrent  = pangoColor "gold" . pangoFontWrap"{" "}" . pangoSanitize
@@ -289,7 +289,7 @@ colourXP f = do c <-clockColor
 printWs :: X ()
 printWs = do text <- getWorkspacesString
              c <-clockColor
-             flashText' defaultSTConfig{st_bg=myBgColor, st_fg=c} 1 text
+             flashText' def{st_bg=myBgColor, st_fg=c} 1 text
 
 clockColor :: X String
 clockColor = do now<-io getTime
