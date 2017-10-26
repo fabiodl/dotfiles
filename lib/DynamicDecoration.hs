@@ -21,6 +21,7 @@ module DynamicDecoration
     , dynamicTabs
     , Direction2D(..)
     ,  Theme (..)
+    , MouseClickBindings (..)
     ) where
 
 import Control.Monad (when)
@@ -45,6 +46,7 @@ import qualified XMonad.Util.ExtensibleState as XS
 import XMonad.Util.Types (Direction2D(..))
 import XMonad.Layout.Simplest
 
+
 -- $usage
 -- This module is intended for layout developers, who want to decorate
 -- their layouts. End users will not find here very much for them.
@@ -66,18 +68,24 @@ dynamicDecoration :: (DecorationStyle ds a, Shrinker s) => s -> DynamicTheme -> 
            -> l a -> ModifiedLayout (DynamicDecoration ds s) l a
 dynamicDecoration s t ds = ModifiedLayout (DynamicDecoration (I Nothing) s t ds)
 
-dynamicTabs location theme = dynamicDecoration shrinkText theme (Tabbed  location Always) Simplest 
+dynamicTabs location theme clickBindings= dynamicDecoration shrinkText theme (Tabbed  location Always clickBindings) Simplest 
 
 
-newtype DynamicTheme = DynamicTheme { theme:: X Theme}
+
+newtype DynamicTheme = DynamicTheme { theme:: X Theme }
 
 instance Show (DynamicTheme) where show _ = ""
-
 instance Read (DynamicTheme) where readsPrec _ s = [(def,s)]
 instance Default DynamicTheme where
   def = DynamicTheme {theme=return def}
 
 
+newtype MouseClickBindings = MouseClickBindings {mouseClickBindings:: Button -> Window -> X () }
+
+instance Show (MouseClickBindings) where show _ = ""
+instance Read (MouseClickBindings) where readsPrec _ s = [(def,s)]
+instance Default MouseClickBindings where
+  def = MouseClickBindings{ mouseClickBindings  = (\button win -> if button == button1 then focus win else return ())}
 
 data StoredTheme = StoredTheme{lastTheme::Theme} deriving Typeable
 instance ExtensionClass StoredTheme where
@@ -388,24 +396,23 @@ class (Read (ds a), Show (ds a), Eq a) => DecorationStyle ds a where
 
 data TabbarShown = Always | WhenPlural deriving (Read, Show, Eq)
 
-data TabbedDecoration a = Tabbed Direction2D TabbarShown deriving (Read, Show)
+data TabbedDecoration a = Tabbed Direction2D TabbarShown MouseClickBindings deriving (Read, Show)
 
 instance Eq a => DecorationStyle TabbedDecoration a where
-    describeDeco (Tabbed U _ ) = "Tabbed"
-    describeDeco (Tabbed D _ ) = "Tabbed Bottom"
-    describeDeco (Tabbed L _ ) = "Tabbed Left"
-    describeDeco (Tabbed R _ ) = "Tabbed Right"
-    decorationEventHook _ ds ButtonEvent { ev_window     = ew
+    describeDeco (Tabbed U _ _) = "Tabbed"
+    describeDeco (Tabbed D _ _) = "Tabbed Bottom"
+    describeDeco (Tabbed L _ _) = "Tabbed Left"
+    describeDeco (Tabbed R _ _) = "Tabbed Right"
+    decorationEventHook (Tabbed _ _ mcb) ds ButtonEvent { ev_window     = ew
                                          , ev_event_type = et
                                          , ev_button     = eb }
         | et == buttonPress
         , Just ((w,_),_) <- findWindowByDecoration ew ds =
-           if eb == button2
-               then killWindow w
-               else focus w
+           f eb w where f = mouseClickBindings mcb 
+
     decorationEventHook _ _ _ = return ()
 
-    pureDecoration (Tabbed lc sh) wt ht _ s wrs (w,r@(Rectangle x y wh hh))
+    pureDecoration (Tabbed lc sh _) wt ht _ s wrs (w,r@(Rectangle x y wh hh))
         = if ((sh == Always && numWindows > 0) || numWindows > 1)
           then Just $ case lc of
                         U -> upperTab
@@ -426,7 +433,7 @@ instance Eq a => DecorationStyle TabbedDecoration a where
               leftTab = Rectangle x ny (fi wt) hid
               rightTab = Rectangle (x + fi (wh - wt)) ny (fi wt) hid
               numWindows = length ws
-    shrink (Tabbed loc _ ) (Rectangle _ _ dw dh) (Rectangle x y w h)
+    shrink (Tabbed loc _ _) (Rectangle _ _ dw dh) (Rectangle x y w h)
         = case loc of
             U -> Rectangle x (y + fi dh) w (h - dh)
             D -> Rectangle x y w (h - dh)

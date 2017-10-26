@@ -21,7 +21,7 @@ import qualified XMonad.StackSet as W
 import XMonad.Layout.NoBorders(smartBorders)
 import XMonad.Layout.Reflect
 import XMonad.Layout.MultiToggle
-
+import XMonad.Layout.MultiToggle.Instances
 import XMonad.Layout.LayoutCombinators 
 import XMonad.Layout.Renamed
 
@@ -38,12 +38,17 @@ import XMonad.Actions.Navigation2D
 import XMonad.Prompt
 import XMonad.Prompt.Window
 import XMonad.Prompt.Shell
+import XMonad.Prompt.XMonad
 
 import XMonad.Util.Scratchpad
 import XMonad.Util.XUtils(stringToPixel)
 
 import CenteredFlash
 import DynamicDecoration
+
+import XMonad.Layout.TwoPane
+import XMonad.Layout.ComboP
+
 
 myModKey = mod4Mask                  
 
@@ -111,9 +116,8 @@ myKeys=
  , ((myModKey, xK_F12), scratchPad) -- quake terminal
  , ((myModKey, xK_s), sendMessage (Toggle REFLECTX) >> printWs)
  , ((myModKey .|. shiftMask, xK_s), screenSwap L True >>printWs)
- , ((myModKey, xK_v), sendMessage $ JumpToLayout "Tile")
- , ((myModKey .|. shiftMask, xK_v), (sendMessage $ JumpToLayout "Tab") )
- , ((myModKey .|. controlMask, xK_v), sendMessage $ JumpToLayout "Full") 
+ , ((myModKey .|. controlMask, xK_Return) , sendMessage SwapWindow)
+ , ((myModKey, xK_v), editLayout)
  ]
   ++
     -- mod-{w,e,r} %! Switch to physical/Xinerama screens 1, 2, or 3
@@ -132,14 +136,23 @@ myKeys=
   (( myModKey .|. m,k), a dir loop) |
     (a,m,loop) <- [ (windowGo,0,False), (windowSwap,shiftMask,False), (windowToScreenMaster,controlMask,False), (screenGo,mod1Mask,True)] ,
     (k,dir) <-[ (xK_Right, R), (xK_Left, L), (xK_Up, U), (xK_Down, D) ] 
-  ]
+  ] 
   where windowToScreenMaster dir loop = windowToScreen dir loop >> screenGo dir loop >> windows W.swapMaster
+        layoutOptions = [(key++":"++layout, sendMessage $ JumpToLayout layout) |
+                           (key,layout) <- [("v","Tile"),("0","Full"),("1","Tab"),("2","Double") ]
+                        ]++[("r:Rotate",sendMessage (Toggle MIRROR))]                                                                                 
+        editLayout = clockColor >>= \c -> xmonadPromptC layoutOptions myXPConfig
+          { fgColor=c
+          , bgHLight=c
+          , borderColor=c
+          , autoComplete = Just 3
+          , searchPredicate = DL.isPrefixOf
+          }
+          
 
 
-myTiledLayout= renamed [Replace "Tile"] $ mkToggle (single REFLECTX) $ tall ||| Mirror(tall) 
-  where tall =  Tall 1 (3/100) (1/2)
-  
-myTabbedLayout = renamed [Replace "Tab"] $ mkToggle(single REFLECTX) $ dynamicTabs D def{
+myDynamicTheme :: DynamicTheme 
+myDynamicTheme = def{
   theme=do col<-clockColor
            return Theme{ activeColor         = col
                        , inactiveColor       = "black"
@@ -157,7 +170,20 @@ myTabbedLayout = renamed [Replace "Tab"] $ mkToggle(single REFLECTX) $ dynamicTa
                        , windowTitleIcons    = []
                        }  
   }
-                                                                                       
+
+
+myTabClickBindings btn win= if btn==button1 then focus win
+                            else if btn==button3 then focus win >> sendMessage SwapWindow
+                            else return ()
+
+myTiledLayout = renamed [Replace "Tile"] $ mkToggle (single REFLECTX) $ mkToggle (single MIRROR ) $ tall 
+  where tall =  Tall 1 (3/100) (1/2)  
+myTabbedLayout = renamed [Replace "Tab"] $ mkToggle (single REFLECTX) $  dynamicTabs D myDynamicTheme def
+myDoubleLayout = renamed [Replace "Double"] $ combineTwoP (TwoPane 0.03 0.5) tabLayout tabLayout (Const False)
+  where tabLayout = dynamicTabs D myDynamicTheme def{mouseClickBindings = myTabClickBindings}
+                                                                              
+
+
 main :: IO ()
 main = do
     dbus <- D.connectSession
@@ -167,7 +193,7 @@ main = do
            $ ewmh gnomeConfig           
          { logHook = dynamicLogWithPP (prettyPrinter dbus)  <+> (clockColor >>= setBorderColor)-- <+> fadeHook
          , mouseBindings = myMouseBindings
-         , layoutHook =    avoidStruts $ smartBorders ( myTiledLayout ||| myTabbedLayout ||| Full ) 
+         , layoutHook =  avoidStruts $ smartBorders  ( myTiledLayout ||| myDoubleLayout ||| myTabbedLayout ||| Full ) 
          , normalBorderColor   =  myBgColor
          , focusedBorderColor =  myFgColor
          , modMask = myModKey 
@@ -175,7 +201,7 @@ main = do
          , handleEventHook = handleEventHook gnomeConfig <+> fullscreenEventHook <+> handleTimerEvent
          , manageHook = myManageHook <+> manageHook gnomeConfig
          , workspaces = myWorkspaces
-         } `additionalKeys` myKeys 
+         } `additionalKeys` myKeys  
   
 
 prettyPrinter :: D.Client -> PP
@@ -254,8 +280,6 @@ myHiddenWS t= do hs <- gets (map W.tag . W.hidden . windowset)
                  return (\w -> hidden w && e w && knownWs w)
 
 
-
-
 --adapted from http://xmonad.haskell.narkive.com/EToEJM1K/normal-rather-than-greedy-view-disable-screen-focus-switching
 isVisible w ws = any ((w ==) . W.tag . W.workspace) (W.visible ws)
 lazyView w ws = if isVisible w ws then ws else W.view w ws
@@ -281,9 +305,9 @@ getWorkspacesString = do w <- gets windowset
 
 colourXP :: (XPConfig -> X() )  -> X()
 colourXP f = do c <-clockColor
-                f myXPConfig{fgColor=c
-                            ,bgHLight=c
-                            ,borderColor=c
+                f myXPConfig{ fgColor=c
+                            , bgHLight=c
+                            , borderColor=c
                             }
 
 printWs :: X ()
