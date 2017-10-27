@@ -95,7 +95,6 @@ myXPConfig = def{
   , maxComplRows=Just 3 --not available in version 0.11
   }
 
-
 scratchPad = scratchpadSpawnActionTerminal "urxvt"
 dmenu c= "dmenu_run -nb \""++(bgColor c)++"\" -nf \""++(fgColor c)++"\" -sb \""++(fgColor c)++"\" -sf \""++(bgColor c)++"\""
 
@@ -148,9 +147,7 @@ myKeys=
           , autoComplete = Just 3
           , searchPredicate = DL.isPrefixOf
           }
-          
-
-
+         
 myDynamicTheme :: DynamicTheme 
 myDynamicTheme = def{
   theme=do col<-clockColor
@@ -171,7 +168,6 @@ myDynamicTheme = def{
                        }  
   }
 
-
 myTabClickBindings btn win | btn==button1 = focus win
                            | btn==button3 = focus win >> sendMessage SwapWindow
                            | otherwise    =  return ()
@@ -182,8 +178,6 @@ myTabbedLayout = renamed [Replace "Tab"] $ mkToggle (single REFLECTX) $  dynamic
 myDoubleLayout = renamed [Replace "Double"] $ combineTwoP (TwoPane 0.03 0.5) tabLayout tabLayout (Const False)
   where tabLayout = dynamicTabs D myDynamicTheme def{mouseClickBindings = myTabClickBindings}
                                                                               
-
-
 main :: IO ()
 main = do
     dbus <- D.connectSession
@@ -203,8 +197,6 @@ main = do
          , workspaces = myWorkspaces
          } `additionalKeys` myKeys  
   
-
-
 pangoPP :: D.Client  -> PP
 pangoPP dbus = def
     { ppOutput   = dbusOutput dbus
@@ -256,10 +248,8 @@ pangoSanitize = foldr sanitize ""
     sanitize '&'  xs = "&amp;" ++ xs
     sanitize x    xs = x:xs
 
-
 toUpper :: String -> String
 toUpper = TL.unpack . TL.toUpper .  TL.pack
-
 
 cmpScreen' :: Rectangle -> Rectangle -> Ordering
 cmpScreen' (Rectangle x1 y1 _ _) (Rectangle x2 y2 _ _) = compare (y1,x1) (y2,x2)
@@ -268,10 +258,7 @@ getOrderedScreens :: X [ScreenId]
 getOrderedScreens =do w <- gets windowset
                       return (map W.screen $ DL.sortBy (cmpScreen' `on` (screenRect . W.screenDetail)) $ W.current w : W.visible w)
 
-
-
-
-myHiddenWS:: WSType -> X (WindowSpace -> Bool)
+myHiddenWS :: WSType -> X (WindowSpace -> Bool)
 myHiddenWS t= do hs <- gets (map W.tag . W.hidden . windowset)
                  let e = case t of
                       EmptyWS-> isNothing . W.stack
@@ -282,11 +269,9 @@ myHiddenWS t= do hs <- gets (map W.tag . W.hidden . windowset)
                  let knownWs = (\w -> W.tag w `elem` myWorkspaces) 
                  return (\w -> hidden w && e w && knownWs w)
 
-
 --adapted from http://xmonad.haskell.narkive.com/EToEJM1K/normal-rather-than-greedy-view-disable-screen-focus-switching
 isVisible w ws = any ((w ==) . W.tag . W.workspace) (W.visible ws)
 lazyView w ws = if isVisible w ws then ws else W.view w ws
-
 
 setBorderColor :: String -> X ()
 setBorderColor col = do d <- asks display
@@ -295,17 +280,13 @@ setBorderColor col = do d <- asks display
                         case ws of
                           Nothing -> return ()
                           Just win -> setWindowBorderWithFallback d win col px
-                    
-
-               
+                                   
 getWorkspacesString :: X String
 getWorkspacesString = do w <- gets windowset                         
                          screens <- getOrderedScreens
                          return $ foldr (++) "" (DL.intersperse " " [ highlight (W.currentTag w)  (fromMaybe "" $ W.lookupWorkspace sc w)  | sc<-screens])
                          where highlight curr ws = if curr==ws then "["++ws++"]" else ws
                          
-
-
 colourXP :: (XPConfig -> X() )  -> X()
 colourXP f = do c <-clockColor
                 f myXPConfig{ fgColor=c
@@ -322,7 +303,6 @@ clockColor :: X String
 clockColor = do now<-io getTime
                 return (timeToColor now)
 
-
 timeToColor :: TimeOfDay-> String
 timeToColor time = let maxTime = 3600.0*23.0+60.0*59+61.0  :: Float
                        theta = 2*2*pi/maxTime *(  3600.0*(fromIntegral $ todHour time ) --2 cycles a day
@@ -335,11 +315,10 @@ timeToColor time = let maxTime = 3600.0*23.0+60.0*59+61.0  :: Float
                        val = clip 0 1$ 0.014*c+0.050*s+0.966 
                        color = hsv' hue sat val
                        [r,g,b]= map (clip 0 255 . round . (*255)) color ::[Integer]
-                   in printf "#%02X%02X%02X" r g b where clip minv maxv x = min maxv $ max minv x                                                         
-  
+                   in printf "#%02X%02X%02X" r g b where clip minv maxv x = min maxv $ max minv x
+                                                         
 getTime :: IO TimeOfDay                      
 getTime = fmap (localTimeOfDay . zonedTimeToLocalTime) getZonedTime
-
 
 --takes hue values in the range 0-1
 hsv' :: (RealFrac a, Ord a) => a -> a -> a -> [a]
