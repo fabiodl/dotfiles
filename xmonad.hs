@@ -26,11 +26,11 @@ import XMonad.Layout.LayoutCombinators
 import XMonad.Layout.Renamed
 
 import XMonad.Hooks.DynamicLog
-import XMonad.Util.EZConfig(additionalKeys)
 import XMonad.Hooks.SetWMName
 import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.UrgencyHook
 import XMonad.Hooks.ManageDocks
+import XMonad.Util.EZConfig(additionalKeys)
 
 import XMonad.Actions.CycleWS
 import XMonad.Actions.Navigation2D
@@ -172,9 +172,9 @@ myDynamicTheme = def{
   }
 
 
-myTabClickBindings btn win= if btn==button1 then focus win
-                            else if btn==button3 then focus win >> sendMessage SwapWindow
-                            else return ()
+myTabClickBindings btn win | btn==button1 = focus win
+                           | btn==button3 = focus win >> sendMessage SwapWindow
+                           | otherwise    =  return ()
 
 myTiledLayout = renamed [Replace "Tile"] $ mkToggle (single REFLECTX) $ mkToggle (single MIRROR ) $ tall 
   where tall =  Tall 1 (3/100) (1/2)  
@@ -191,7 +191,7 @@ main = do
     xmonad $ docks $ withUrgencyHook NoUrgencyHook
            $ withNavigation2DConfig def
            $ ewmh gnomeConfig           
-         { logHook = dynamicLogWithPP (prettyPrinter dbus)  <+> (clockColor >>= setBorderColor)-- <+> fadeHook
+           { logHook = dynamicLogWithPP (pangoPP dbus)  <+> (clockColor >>= setBorderColor)-- <+> fadeHook
          , mouseBindings = myMouseBindings
          , layoutHook =  avoidStruts $ smartBorders  ( myTiledLayout ||| myDoubleLayout ||| myTabbedLayout ||| Full ) 
          , normalBorderColor   =  myBgColor
@@ -204,20 +204,23 @@ main = do
          } `additionalKeys` myKeys  
   
 
-prettyPrinter :: D.Client -> PP
-prettyPrinter dbus = def
+
+pangoPP :: D.Client  -> PP
+pangoPP dbus = def
     { ppOutput   = dbusOutput dbus
-    , ppTitle    = pangoColor "white" . pangoFontWrap "" "" .pangoSanitize
-    , ppCurrent  = pangoColor "gold" . pangoFontWrap"{" "}" . pangoSanitize
-    , ppVisible  = pangoColor "lightsalmon" . pangoFontWrap "[" "]" . pangoSanitize
-    , ppHidden   = pangoColor "white" . pangoFontWrap "(" ")" . pangoSanitize . onlyKnown
-    , ppUrgent   = pangoColor "red" . pangoFontWrap "!" "!" . pangoSanitize
-    , ppLayout   = pangoColor "seagreen" . pangoFontWrap "|" "|"
-    , ppSep      = pangoFontWrap "" "" " "
+    , ppTitle    = myFormat "white" 
+    , ppTitleSanitize = pangoSanitize
+    , ppCurrent  = myFormat "gold" .  wrap"{" "}" 
+    , ppVisible  = myFormat "lightsalmon" . wrap "[" "]" 
+    , ppHidden   = myFormat "white" . wrap "(" ")" . onlyKnown
+    , ppUrgent   = myFormat "red" . wrap "!" "!" 
+    , ppLayout   = myFormat "seagreen" . wrap "|" "|"
+    , ppSep      = pangoFont myFont " "
     }
  where
-    onlyKnown ws = if ws `elem` myWorkspaces then ws else ""
-
+    onlyKnown ws = if ws `elem` myWorkspaces then ws else "" --successive wraps return "" for a "" argument
+    myFont = "Sans Bold 8" 
+    myFormat color = wrap ("<span foreground=\"" ++color++"\" font=\""++myFont++"\">") "</span>"
 
 getWellKnownName :: D.Client -> IO ()
 getWellKnownName dbus = do
@@ -238,11 +241,11 @@ pangoColor fg = wrap left right
     left  = "<span foreground=\"" ++ fg ++ "\">"
     right = "</span>"
 
-pangoFontWrap :: String -> String -> (String->String)
-pangoFontWrap open close = wrap left right
+pangoFont :: String -> String -> String
+pangoFont font = wrap left right
   where
-    left="<span font=\"Sans Bold 8\">"++open
-    right=close++"</span>"
+    left="<span font=\""++font++"\">"
+    right="</span>"
 
 pangoSanitize :: String -> String
 pangoSanitize = foldr sanitize ""
@@ -326,12 +329,13 @@ timeToColor time = let maxTime = 3600.0*23.0+60.0*59+61.0  :: Float
                                               +  60.0* (fromIntegral $ todMin time)
                                               + realToFrac(todSec time))   :: Float
                        [c,s]= [cos(theta),sin(theta)]
-                       hue = clip $ -0.363*c+0.101*s+0.379
-                       sat = clip $ 0.100*c+0.360*s+0.758
-                       val = clip $ 0.014*c+0.050*s+0.966
+                       hue = clip 0 1 $ -0.363*c+0.101*s+0.379 
+                       sat = clip 0 mxs $ 0.100*c+0.360*s+0.758 where
+                         mxs = min 1 $ 0.6+0.4*abs(hue-(2.0/3.0)) 
+                       val = clip 0 1$ 0.014*c+0.050*s+0.966 
                        color = hsv' hue sat val
-                       [r,g,b]= map (round . (*255). clip ) color ::[Integer]
-                   in printf "#%02X%02X%02X" r g b where clip x = min 1.0 $ max 0.0 x
+                       [r,g,b]= map (clip 0 255 . round . (*255)) color ::[Integer]
+                   in printf "#%02X%02X%02X" r g b where clip minv maxv x = min maxv $ max minv x                                                         
   
 getTime :: IO TimeOfDay                      
 getTime = fmap (localTimeOfDay . zonedTimeToLocalTime) getZonedTime
