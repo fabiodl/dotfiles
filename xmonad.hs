@@ -185,7 +185,7 @@ main = do
     xmonad $ docks $ withUrgencyHook NoUrgencyHook
            $ withNavigation2DConfig def
            $ ewmh gnomeConfig           
-           { logHook = dynamicLogWithPP (pangoPP dbus)  <+> (clockColor >>= setBorderColor)-- <+> fadeHook
+           { logHook = clockColor >>= (\col -> dynamicLogWithPP (pangoPP dbus col)  <+> (setBorderColor col))-- <+> fadeHook
          , mouseBindings = myMouseBindings
          , layoutHook =  avoidStruts $ smartBorders  ( myTiledLayout ||| myDoubleLayout ||| myTabbedLayout ||| Full ) 
          , normalBorderColor   =  myBgColor
@@ -197,8 +197,8 @@ main = do
          , workspaces = myWorkspaces
          } `additionalKeys` myKeys  
   
-pangoPP :: D.Client  -> PP
-pangoPP dbus = def
+pangoPP :: D.Client -> String-> PP
+pangoPP dbus col = def
     { ppOutput   = dbusOutput dbus
     , ppTitle    = myFormat "white" 
     , ppTitleSanitize = pangoSanitize
@@ -206,7 +206,7 @@ pangoPP dbus = def
     , ppVisible  = myFormat "lightsalmon" . wrap "[" "]" 
     , ppHidden   = myFormat "white" . wrap "(" ")" . onlyKnown
     , ppUrgent   = myFormat "red" . wrap "!" "!" 
-    , ppLayout   = myFormat "seagreen" . wrap "|" "|"
+    , ppLayout   = myFormat col . wrap "|" "|"
     , ppSep      = pangoFont myFont " "
     }
  where
