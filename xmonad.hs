@@ -134,7 +134,9 @@ myKeys=
   [
   (( myModKey .|. m,k), a dir loop) |
     (a,m,loop) <- [ (windowGo,0,False), (windowSwap,shiftMask,False), (windowToScreenMaster,controlMask,False), (screenGo,mod1Mask,True)] ,
-    (k,dir) <-[ (xK_Right, R), (xK_Left, L), (xK_Up, U), (xK_Down, D) ] 
+    (k,dir) <-[ (xK_Right, R), (xK_Left, L), (xK_Up, U), (xK_Down, D),
+                (xK_bracketright, R), (xK_semicolon, L), (xK_at, U), (xK_colon, D)
+              ] 
   ] 
   where windowToScreenMaster dir loop = windowToScreen dir loop >> screenGo dir loop >> windows W.swapMaster
         layoutOptions = [(key++":"++layout, sendMessage $ JumpToLayout layout) |
