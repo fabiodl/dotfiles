@@ -34,6 +34,7 @@ import XMonad.Util.EZConfig(additionalKeys)
 
 import XMonad.Actions.CycleWS
 import XMonad.Actions.Navigation2D
+import XMonad.Actions.SinkAll
 
 import XMonad.Prompt
 import XMonad.Prompt.Window
@@ -117,6 +118,7 @@ myKeys=
  , ((myModKey .|. shiftMask, xK_s), screenSwap L True >>printWs)
  , ((myModKey .|. controlMask, xK_Return) , sendMessage SwapWindow)
  , ((myModKey, xK_v), editLayout)
+ , ((myModKey .|. shiftMask, xK_t), sinkAll)
  ]
   ++
     -- mod-{w,e,r} %! Switch to physical/Xinerama screens 1, 2, or 3
