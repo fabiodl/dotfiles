@@ -74,16 +74,16 @@ dynamicTabs location theme clickBindings= dynamicDecoration shrinkText theme (Ta
 
 newtype DynamicTheme = DynamicTheme { theme:: X Theme }
 
-instance Show (DynamicTheme) where show _ = ""
-instance Read (DynamicTheme) where readsPrec _ s = [(def,s)]
+instance Show (DynamicTheme) where show _ = "dynamicTheme"
+instance Read (DynamicTheme) where readsPrec _ s = []
 instance Default DynamicTheme where
   def = DynamicTheme {theme=return def}
 
 
 newtype MouseClickBindings = MouseClickBindings {mouseClickBindings:: Button -> Window -> X () }
 
-instance Show (MouseClickBindings) where show _ = ""
-instance Read (MouseClickBindings) where readsPrec _ s = [(def,s)]
+instance Show (MouseClickBindings) where show _ = "MouseClickBinding"
+instance Read (MouseClickBindings) where readsPrec _ s = []
 instance Default MouseClickBindings where
   def = MouseClickBindings{ mouseClickBindings  = (\button win -> if button == button1 then focus win else return ())}
 
