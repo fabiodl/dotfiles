@@ -24,6 +24,8 @@ import XMonad.Layout.MultiToggle
 import XMonad.Layout.MultiToggle.Instances
 import XMonad.Layout.LayoutCombinators 
 import XMonad.Layout.Renamed
+import XMonad.Layout.TwoPane
+import XMonad.Layout.ComboP
 
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.SetWMName
@@ -43,12 +45,10 @@ import XMonad.Prompt.XMonad
 
 import XMonad.Util.Scratchpad
 import XMonad.Util.XUtils(stringToPixel)
+import XMonad.Util.WorkspaceCompare
 
 import CenteredFlash
 import DynamicDecoration
-
-import XMonad.Layout.TwoPane
-import XMonad.Layout.ComboP
 
 
 myModKey = mod4Mask                  
@@ -118,7 +118,8 @@ myKeys=
  , ((myModKey .|. shiftMask, xK_s), screenSwap L True >>printWs)
  , ((myModKey .|. controlMask, xK_Return) , sendMessage SwapWindow)
  , ((myModKey, xK_v), editLayout)
- , ((myModKey .|. shiftMask, xK_t), sinkAll)
+ , ((myModKey .|. shiftMask, xK_t), sinkAll >> printWs)
+ , ((myModKey, xK_z), toggleWS >> printWs )
  ]
   ++
     -- mod-{w,e,r} %! Switch to physical/Xinerama screens 1, 2, or 3
@@ -128,9 +129,9 @@ myKeys=
         , (f, m) <- [(W.view, 0), (W.shift , shiftMask)]]
   ++
   [
-    ((myModKey .|. m, k),   (windows $ f i) >> printWs) 
+    ((myModKey .|. m, k),  windows (f i) >> printWs) 
     | (i, k) <- zip myWorkspaces [xK_1 .. xK_9]
-    , (f, m) <- [(lazyView, 0), (W.shift, shiftMask), (W.greedyView, controlMask)]
+    , (f, m) <- [(lazyView, 0), (W.shift, shiftMask), (W.greedyView, mod1Mask),(shiftAndGo, controlMask)]
   ]
   ++
   [
@@ -143,7 +144,9 @@ myKeys=
   where windowToScreenMaster dir loop = windowToScreen dir loop >> screenGo dir loop >> windows W.swapMaster
         layoutOptions = [(key++":"++layout, sendMessage $ JumpToLayout layout) |
                            (key,layout) <- [("v","Tile"),("0","Full"),("1","Tab"),("2","Double") ]
-                        ]++[("r:Rotate",sendMessage (Toggle MIRROR))]                                                                                 
+                        ]++[ ("r:Rotate",sendMessage (Toggle MIRROR))
+                           , ("n:Empty",pushToEmpty)
+                           ]
         editLayout = clockColor >>= \c -> xmonadPromptC layoutOptions myXPConfig
           { fgColor=c
           , bgHLight=c
@@ -151,7 +154,9 @@ myKeys=
           , autoComplete = Just 3
           , searchPredicate = DL.isPrefixOf
           }
-         
+        pushToEmpty = doTo Next (WSIs $ myHiddenWS EmptyWS) getSortByIndex (\ws -> windows (W.shift ws) >> windows (W.view ws) >> printWs ) 
+        shiftAndGo i ws =  W.view i $ W.shift i ws
+
 myDynamicTheme :: DynamicTheme 
 myDynamicTheme = def{
   theme=do col<-clockColor
@@ -189,7 +194,7 @@ main = do
     xmonad $ docks $ withUrgencyHook NoUrgencyHook
            $ withNavigation2DConfig def
            $ ewmh gnomeConfig           
-           { logHook = clockColor >>= (\col -> dynamicLogWithPP (pangoPP dbus col) <+> (setBorderColor col))-- <+> fadeHook
+           { logHook = clockColor >>= (\col -> dynamicLogWithPP (pangoPP dbus col) <+> (setBorderColor col)) -- <+> fadeHook
          , mouseBindings = myMouseBindings
          , layoutHook =  avoidStruts $ smartBorders  ( myTiledLayout ||| myDoubleLayout ||| myTabbedLayout ||| Full ) 
          , normalBorderColor   =  myBgColor
@@ -275,6 +280,8 @@ myHiddenWS t= do hs <- gets (map W.tag . W.hidden . windowset)
 
 --adapted from http://xmonad.haskell.narkive.com/EToEJM1K/normal-rather-than-greedy-view-disable-screen-focus-switching
 isVisible w ws = any ((w ==) . W.tag . W.workspace) (W.visible ws)
+
+lazyView :: WorkspaceId -> WindowSet -> WindowSet
 lazyView w ws = if isVisible w ws then ws else W.view w ws
 
 setBorderColor :: String -> X ()
