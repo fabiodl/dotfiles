@@ -7,6 +7,8 @@ import Data.Function (on)
 import qualified Data.Text.Lazy as TL
 import Data.Time.LocalTime
 import Text.Printf
+import Control.Applicative((<$>))
+
 
 import XMonad hiding ( (|||) )
 import XMonad.Config.Gnome
@@ -37,7 +39,8 @@ import XMonad.Util.EZConfig(additionalKeys)
 import XMonad.Actions.CycleWS
 import XMonad.Actions.Navigation2D
 import XMonad.Actions.SinkAll
-
+import XMonad.Actions.WindowBringer
+  
 import XMonad.Prompt
 import XMonad.Prompt.Window
 import XMonad.Prompt.Shell
@@ -46,6 +49,7 @@ import XMonad.Prompt.XMonad
 import XMonad.Util.Scratchpad
 import XMonad.Util.XUtils(stringToPixel)
 import XMonad.Util.WorkspaceCompare
+import XMonad.Util.NamedWindows (getName)
 
 import CenteredFlash
 import DynamicDecoration
@@ -104,7 +108,7 @@ myKeys=
  , ((myModKey .|. shiftMask,   xK_q), spawn "xkill")
  , ((myModKey .|. shiftMask .|. controlMask,  xK_q), io exitSuccess)
  , ((myModKey,               xK_space ), sendMessage NextLayout) -- %! Rotate through the available layout algorithms
- , ((myModKey , xK_g     ), printWs >> colourXP windowPromptGoto  >> printWs)
+ , ((myModKey , xK_g     ), printWs >> colourXP gotoPrompt  >> printWs)
  , ((myModKey , xK_b     ), printWs >> colourXP windowPromptBring)
  , ((myModKey , xK_p     ), colourXP shellPrompt)
  , ((myModKey .|. shiftMask , xK_p), colourXP (spawn . dmenu) ) 
@@ -156,7 +160,12 @@ myKeys=
           }
         pushToEmpty = doTo Next (WSIs $ myHiddenWS EmptyWS) getSortByIndex (\ws -> windows (W.shift ws) >> windows (W.view ws) >> printWs ) 
         shiftAndGo i ws =  W.view i $ W.shift i ws
+        myDecorateName ws w= do name <- show <$> getName w
+                                winset <- gets windowset
+                                return $ name ++ " {" ++ W.tag ws ++ "}"
 
+        gotoPrompt c = windowPrompt c Goto (windowMap' myDecorateName)
+        
 myDynamicTheme :: DynamicTheme 
 myDynamicTheme = def{
   theme=do col<-clockColor
