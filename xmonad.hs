@@ -230,11 +230,11 @@ pangoPP dbus col = def
     { ppOutput   = dbusOutput dbus
     , ppTitle    = myFormat "white" 
     , ppTitleSanitize = pangoSanitize
-    , ppCurrent  = myFormat "gold" .  wrapBy wrapCharsCurrent
-    , ppVisible  = myFormat "lightsalmon" . wrapBy wrapCharsVisible
-    , ppHidden   = myFormat "white" . wrapBy wrapCharsHidden . onlyKnown
-    , ppUrgent   = myFormat "red" . wrapBy wrapCharsUrgent
-    , ppLayout   = myFormat col . wrapBy wrapCharsLayout
+    , ppCurrent  = myFormat "gold" .  pangoSanitize . wrapBy wrapCharsCurrent
+    , ppVisible  = myFormat "lightsalmon" . pangoSanitize . wrapBy wrapCharsVisible
+    , ppHidden   = myFormat "white" . pangoSanitize . wrapBy wrapCharsHidden . onlyKnown
+    , ppUrgent   = myFormat "red" . pangoSanitize .wrapBy wrapCharsUrgent
+    , ppLayout   = myFormat col . pangoSanitize . wrapBy wrapCharsLayout
     , ppSep      = pangoFont myFont " "
     }
  where
