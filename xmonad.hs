@@ -134,7 +134,7 @@ myKeys=
     -- mod-shift-{w,e,r} %! Move client to screen 1, 2, or 3
     [((myModKey .|. m, key), screenWorkspace sc >>= flip whenJust (windows . f) >>printWs)
         | (key, sc) <- zip [xK_w, xK_e, xK_r] [0..]
-        , (f, m) <- [(W.view, 0), (W.shift , shiftMask)]]
+        , (f, m) <- [(W.view, 0), (W.shift , shiftMask),(shiftAndGo, controlMask) ]]
   ++
   [
     ((myModKey .|. m, k),  windows (f i) >> printWs) 
