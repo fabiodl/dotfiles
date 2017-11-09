@@ -231,7 +231,7 @@ pangoPP dbus col = def
     , ppTitle    = myFormat "white" 
     , ppTitleSanitize = pangoSanitize
     , ppCurrent  = myFormat "gold" .  pangoSanitize . wrapBy wrapCharsCurrent
-    , ppVisible  = myFormat "lightsalmon" . pangoSanitize . wrapBy wrapCharsVisible
+    , ppVisible  = myFormat "darkorange" . pangoSanitize . wrapBy wrapCharsVisible
     , ppHidden   = myFormat "white" . pangoSanitize . wrapBy wrapCharsHidden . onlyKnown
     , ppUrgent   = myFormat "red" . pangoSanitize .wrapBy wrapCharsUrgent
     , ppLayout   = myFormat col . pangoSanitize . wrapBy wrapCharsLayout
@@ -239,7 +239,7 @@ pangoPP dbus col = def
     }
  where
     onlyKnown ws = if ws `elem` myWorkspaces then ws else "" --successive wraps return "" for a "" argument
-    myFont = "Sans Bold 8" 
+    myFont = "Monospace Bold 8" 
     myFormat color = wrap ("<span foreground=\"" ++color++"\" font=\""++myFont++"\">") "</span>"
 
 getWellKnownName :: D.Client -> IO ()
