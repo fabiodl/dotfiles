@@ -9,7 +9,6 @@ import Data.Time.LocalTime
 import Text.Printf
 import Control.Applicative((<$>))
 
-
 import XMonad hiding ( (|||) )
 import XMonad.Config.Gnome
 
@@ -53,7 +52,6 @@ import XMonad.Util.NamedWindows (getName)
 
 import CenteredFlash
 import DynamicDecoration
-
 
 myModKey = mod4Mask                  
 
@@ -103,13 +101,19 @@ myXPConfig = def{
 scratchPad = scratchpadSpawnActionTerminal "urxvt"
 dmenu c= "dmenu_run -nb \""++(bgColor c)++"\" -nf \""++(fgColor c)++"\" -sb \""++(fgColor c)++"\" -sf \""++(bgColor c)++"\""
 
+wrapCharsCurrent = ("[","]")
+wrapCharsVisible = ("<",">")
+wrapCharsHidden  = ("(",")")
+wrapCharsUrgent = ("!","!")
+wrapCharsLayout = ("|","|")
+
 myKeys=
  [ ((mod1Mask .|. shiftMask , xK_BackSpace), spawn "gnome-screensaver-command -l")
  , ((myModKey .|. shiftMask,   xK_q), spawn "xkill")
  , ((myModKey .|. shiftMask .|. controlMask,  xK_q), io exitSuccess)
  , ((myModKey,               xK_space ), sendMessage NextLayout) -- %! Rotate through the available layout algorithms
  , ((myModKey , xK_g     ), printWs >> colourXP gotoPrompt  >> printWs)
- , ((myModKey , xK_b     ), printWs >> colourXP windowPromptBring)
+ , ((myModKey , xK_b     ), printWs >> colourXP bringPrompt)
  , ((myModKey , xK_p     ), colourXP shellPrompt)
  , ((myModKey .|. shiftMask , xK_p), colourXP (spawn . dmenu) ) 
  , ((myModKey , xK_n),  moveTo Next (WSIs $myHiddenWS NonEmptyWS) >> printWs)
@@ -162,9 +166,15 @@ myKeys=
         shiftAndGo i ws =  W.view i $ W.shift i ws
         myDecorateName ws w= do name <- show <$> getName w
                                 winset <- gets windowset
-                                return $ name ++ " {" ++ W.tag ws ++ "}"
+                                let tag = W.tag ws
+                                let (open,close) = if tag == W.currentTag winset then wrapCharsCurrent
+                                      else if isVisible tag winset then wrapCharsVisible else wrapCharsHidden
+
+
+                                return $ name ++ " " ++ open ++ W.tag ws ++ close
 
         gotoPrompt c = windowPrompt c Goto (windowMap' myDecorateName)
+        bringPrompt c = windowPrompt c Bring (windowMap' myDecorateName)
         
 myDynamicTheme :: DynamicTheme 
 myDynamicTheme = def{
@@ -220,11 +230,11 @@ pangoPP dbus col = def
     { ppOutput   = dbusOutput dbus
     , ppTitle    = myFormat "white" 
     , ppTitleSanitize = pangoSanitize
-    , ppCurrent  = myFormat "gold" .  wrap"{" "}" 
-    , ppVisible  = myFormat "lightsalmon" . wrap "[" "]" 
-    , ppHidden   = myFormat "white" . wrap "(" ")" . onlyKnown
-    , ppUrgent   = myFormat "red" . wrap "!" "!" 
-    , ppLayout   = myFormat col . wrap "|" "|"
+    , ppCurrent  = myFormat "gold" .  wrapBy wrapCharsCurrent
+    , ppVisible  = myFormat "lightsalmon" . wrapBy wrapCharsVisible
+    , ppHidden   = myFormat "white" . wrapBy wrapCharsHidden . onlyKnown
+    , ppUrgent   = myFormat "red" . wrapBy wrapCharsUrgent
+    , ppLayout   = myFormat col . wrapBy wrapCharsLayout
     , ppSep      = pangoFont myFont " "
     }
  where
@@ -269,6 +279,9 @@ pangoSanitize = foldr sanitize ""
 toUpper :: String -> String
 toUpper = TL.unpack . TL.toUpper .  TL.pack
 
+wrapBy :: (String,String) -> String -> String
+wrapBy (open,close) = wrap open close
+
 cmpScreen' :: Rectangle -> Rectangle -> Ordering
 cmpScreen' (Rectangle x1 y1 _ _) (Rectangle x2 y2 _ _) = compare (y1,x1) (y2,x2)
 
@@ -305,7 +318,7 @@ getWorkspacesString :: X String
 getWorkspacesString = do w <- gets windowset                         
                          screens <- getOrderedScreens
                          return $ foldr (++) "" (DL.intersperse " " [ highlight (W.currentTag w)  (fromMaybe "" $ W.lookupWorkspace sc w)  | sc<-screens])
-                         where highlight curr ws = if curr==ws then "["++ws++"]" else ws
+                         where highlight curr ws = if curr==ws then wrapBy wrapCharsCurrent ws  else ws
                          
 colourXP :: (XPConfig -> X() )  -> X()
 colourXP f = do c <-clockColor
