@@ -108,6 +108,10 @@ wrapCharsHidden  = ("(",")")
 wrapCharsUrgent = ("!","!")
 wrapCharsLayout = ("|","|")
 
+type WsAction = (WorkspaceId -> WindowSet -> WindowSet )
+type WithWsType = (WorkspaceId -> X () ) -> X()
+type NavAction = (Direction2D -> Bool -> X())
+
 myKeys=
  [ ((myModKey .|. shiftMask .|. controlMask, xK_q), io exitSuccess)
  , ((myModKey                , xK_g ), printWs >> withColour (myWindowPrompt Goto)  >> printWs)
@@ -148,7 +152,7 @@ myKeys=
                      ] :: [(KeyMask,(NavAction,Bool))]
         navDirs = [ (xK_Right, R), (xK_Left, L), (xK_Up, U), (xK_Down, D),
                     (xK_bracketright, R), (xK_semicolon, L), (xK_at, U), (xK_colon, D)
-                  ]              
+                  ]  :: [(KeySym, Direction2D)]            
         quickPrompt choices = clockColor >>= \c -> xmonadPromptC choices myXPConfig
                                                  { fgColor = c
                                                  , bgHLight = c
@@ -178,10 +182,6 @@ myKeys=
                        ]
 
 myDisableKeys = [((myModKey .|. shiftMask, xK_q))]
-
-type WsAction = (WorkspaceId -> WindowSet -> WindowSet )
-type WithWsType = (WorkspaceId -> X () ) -> X()
-type NavAction = (Direction2D -> Bool -> X())
 
 makeKeybindings :: (act->ctx->X ()) -> [(KeyMask,act)] -> [(KeySym, ctx)] -> [((KeyMask,KeySym),X())]
 makeKeybindings  combiner maskAssoc keyAssoc  = [ ((myModKey .|. mask, key), combiner action context)
