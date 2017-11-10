@@ -124,27 +124,31 @@ myKeys=
  , ((myModKey .|. controlMask, xK_BackSpace), spawn "gnome-screensaver-command -l")
  ]
  ++
- [ ((myModKey .|. m, key), wsRetriever (windows . action) >> printWs)
-  | (m,action) <- [(0,lazyView), (shiftMask, W.shift), (mod1Mask, W.greedyView), (controlMask,shiftAndGo)]
-  , (key,wsRetriever) <- plainList++physicalList++hiddenList
- ] 
-  ++
-  [
-  (( myModKey .|. m,k), a dir loop) |
-    (a,m,loop) <- [ (windowGo,0,False), (windowSwap,shiftMask,False), (windowToScreenMaster,controlMask,False), (screenGo,mod1Mask,True)] ,
-    (k,dir) <-[ (xK_Right, R), (xK_Left, L), (xK_Up, U), (xK_Down, D),
-                (xK_bracketright, R), (xK_semicolon, L), (xK_at, U), (xK_colon, D)
-              ] 
-  ] 
-  where plainList =  zip [xK_1 .. xK_9]  $ map (\ws ac -> ac ws)   myWorkspaces 
-        physicalList = zip [xK_w, xK_e, xK_r] $ map (\sc ac -> screenWorkspace sc >>= flip whenJust ac) [0..]
-        hiddenList = [(key, doTo dir (WSIs $ myHiddenWS wsType) order) |
-                       (key,dir,wsType,order) <- [ (xK_0,Next,EmptyWS,getSortByIndex)
+ makeKeybindings wsCombiner ((0,lazyView):wsActions) (withPlainWs++withHiddenWs) 
+ ++
+ makeKeybindings wsCombiner  ((0,W.view):wsActions) withPhysicalWs
+ ++
+ makeKeybindings navCombiner navActions navDirs
+  where wsCombiner act ctx = ctx (windows . act) >> printWs 
+        wsActions = [(shiftMask, W.shift), (mod1Mask, W.greedyView), (controlMask,shiftAndGo)] :: [(KeyMask,WsAction)]
+        withPlainWs =  zip [xK_1 .. xK_9]  $ map (\ws ac -> ac ws)   myWorkspaces :: [(KeySym, WithWsType)] 
+        withPhysicalWs = zip [xK_w, xK_e, xK_r] $ map (\sc ac -> screenWorkspace sc >>= flip whenJust ac) [0..] :: [(KeySym, WithWsType)] 
+        withHiddenWs = [(key, doTo dir (WSIs $ myHiddenWS wsType) order) |
+                           (key,dir,wsType,order) <- [ (xK_0,Next,EmptyWS,getSortByIndex)
                                                  , (xK_minus,Prev,NonEmptyWS,getSortByIndex)
                                                  , (xK_asciicircum,Next,NonEmptyWS,getSortByIndex)
                                                  , (xK_u,Next,NonEmptyWS,getSortByHistory)
                                                  ]
-                     ]                     
+                     ] ::[(KeySym, WithWsType)] 
+        navCombiner (act,loop) ctx = act ctx loop
+        navActions = [ (0,(windowGo,False))
+                     , (shiftMask,(windowSwap,False))
+                     , (controlMask,(windowToScreenMaster,False))
+                     , (mod1Mask,(screenGo,True))
+                     ] :: [(KeyMask,(NavAction,Bool))]
+        navDirs = [ (xK_Right, R), (xK_Left, L), (xK_Up, U), (xK_Down, D),
+                    (xK_bracketright, R), (xK_semicolon, L), (xK_at, U), (xK_colon, D)
+                  ]              
         quickPrompt choices = clockColor >>= \c -> xmonadPromptC choices myXPConfig
                                                  { fgColor = c
                                                  , bgHLight = c
@@ -174,6 +178,16 @@ myKeys=
                        ]
 
 myDisableKeys = [((myModKey .|. shiftMask, xK_q))]
+
+type WsAction = (WorkspaceId -> WindowSet -> WindowSet )
+type WithWsType = (WorkspaceId -> X () ) -> X()
+type NavAction = (Direction2D -> Bool -> X())
+
+makeKeybindings :: (act->ctx->X ()) -> [(KeyMask,act)] -> [(KeySym, ctx)] -> [((KeyMask,KeySym),X())]
+makeKeybindings  combiner maskAssoc keyAssoc  = [ ((myModKey .|. mask, key), combiner action context)
+                                                | (mask,action) <- maskAssoc, (key,context) <- keyAssoc]
+
+                                         
 
 getSortByHistory :: X WorkspaceSort
 getSortByHistory = mkWsSort $ do let cmp Nothing Nothing = EQ
