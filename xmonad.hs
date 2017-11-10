@@ -33,7 +33,8 @@ import XMonad.Hooks.SetWMName
 import XMonad.Hooks.EwmhDesktops
 import XMonad.Hooks.UrgencyHook
 import XMonad.Hooks.ManageDocks
-import XMonad.Util.EZConfig(additionalKeys)
+import XMonad.Hooks.WorkspaceHistory
+
 
 import XMonad.Actions.CycleWS
 import XMonad.Actions.Navigation2D
@@ -49,6 +50,7 @@ import XMonad.Util.Scratchpad
 import XMonad.Util.XUtils(stringToPixel)
 import XMonad.Util.WorkspaceCompare
 import XMonad.Util.NamedWindows (getName)
+import XMonad.Util.EZConfig(additionalKeys,removeKeys)
 
 import CenteredFlash
 import DynamicDecoration
@@ -98,8 +100,7 @@ myXPConfig = def{
   , maxComplRows=Just 3 --not available in version 0.11
   }
 
-scratchPad = scratchpadSpawnActionTerminal "urxvt"
-dmenu c= "dmenu_run -nb \""++(bgColor c)++"\" -nf \""++(fgColor c)++"\" -sb \""++(fgColor c)++"\" -sf \""++(bgColor c)++"\""
+dmenu c = "dmenu_run -nb \""++(bgColor c)++"\" -nf \""++(fgColor c)++"\" -sb \""++(fgColor c)++"\" -sf \""++(bgColor c)++"\""
 
 wrapCharsCurrent = ("[","]")
 wrapCharsVisible = ("<",">")
@@ -108,39 +109,25 @@ wrapCharsUrgent = ("!","!")
 wrapCharsLayout = ("|","|")
 
 myKeys=
- [ ((mod1Mask .|. shiftMask , xK_BackSpace), spawn "gnome-screensaver-command -l")
- , ((myModKey .|. shiftMask,   xK_q), spawn "xkill")
- , ((myModKey .|. shiftMask .|. controlMask,  xK_q), io exitSuccess)
- , ((myModKey,               xK_space ), sendMessage NextLayout) -- %! Rotate through the available layout algorithms
- , ((myModKey , xK_g     ), printWs >> colourXP gotoPrompt  >> printWs)
- , ((myModKey , xK_b     ), printWs >> colourXP bringPrompt)
- , ((myModKey , xK_p     ), colourXP shellPrompt)
- , ((myModKey .|. shiftMask , xK_p), colourXP (spawn . dmenu) ) 
- , ((myModKey , xK_n),  moveTo Next (WSIs $myHiddenWS NonEmptyWS) >> printWs)
- , ((myModKey .|. shiftMask, xK_n), moveTo Prev (WSIs $ myHiddenWS NonEmptyWS)  >> printWs)
- , ((myModKey .|. controlMask, xK_n),  moveTo Next (WSIs $ myHiddenWS EmptyWS) >> printWs)
- , ((myModKey , xK_i), spawn "google-chrome")
- , ((myModKey , xK_d), spawn "gjiten")
- , ((myModKey, xK_F12), scratchPad) -- quake terminal
- , ((myModKey, xK_s), sendMessage (Toggle REFLECTX) >> printWs)
- , ((myModKey .|. shiftMask, xK_s), screenSwap L True >>printWs)
- , ((myModKey .|. controlMask, xK_Return) , sendMessage SwapWindow)
- , ((myModKey, xK_v), editLayout)
- , ((myModKey .|. shiftMask, xK_t), sinkAll >> printWs)
- , ((myModKey, xK_z), toggleWS >> printWs )
+ [ ((myModKey .|. shiftMask .|. controlMask, xK_q), io exitSuccess)
+ , ((myModKey                , xK_g ), printWs >> withColour (myWindowPrompt Goto)  >> printWs)
+ , ((myModKey                , xK_b ), printWs >> withColour (myWindowPrompt Bring) )
+ , ((myModKey                , xK_p), withColour shellPrompt)
+ , ((myModKey .|. shiftMask  , xK_p), withColour (spawn . dmenu) )
+ , ((myModKey .|. controlMask, xK_p), quickPrompt spawnOptions)
+ , ((myModKey                , xK_s), sendMessage (Toggle REFLECTX) >> printWs)
+ , ((myModKey .|. shiftMask  , xK_s), screenSwap L True >>printWs)
+ , ((myModKey .|. controlMask, xK_Return), sendMessage SwapWindow)
+ , ((myModKey .|. shiftMask  , xK_t), sinkAll >> printWs)
+ , ((myModKey                , xK_v), quickPrompt layoutOptions)
+ , ((myModKey                , xK_BackSpace), scratchpadSpawnActionTerminal "urxvt") -- quake terminal
+ , ((myModKey .|. controlMask, xK_BackSpace), spawn "gnome-screensaver-command -l")
  ]
-  ++
-    -- mod-{w,e,r} %! Switch to physical/Xinerama screens 1, 2, or 3
-    -- mod-shift-{w,e,r} %! Move client to screen 1, 2, or 3
-    [((myModKey .|. m, key), screenWorkspace sc >>= flip whenJust (windows . f) >>printWs)
-        | (key, sc) <- zip [xK_w, xK_e, xK_r] [0..]
-        , (f, m) <- [(W.view, 0), (W.shift , shiftMask),(shiftAndGo, controlMask) ]]
-  ++
-  [
-    ((myModKey .|. m, k),  windows (f i) >> printWs) 
-    | (i, k) <- zip myWorkspaces [xK_1 .. xK_9]
-    , (f, m) <- [(lazyView, 0), (W.shift, shiftMask), (W.greedyView, mod1Mask),(shiftAndGo, controlMask)]
-  ]
+ ++
+ [ ((myModKey .|. m, key), wsRetriever (windows . action) >> printWs)
+  | (m,action) <- [(0,lazyView), (shiftMask, W.shift), (mod1Mask, W.greedyView), (controlMask,shiftAndGo)]
+  , (key,wsRetriever) <- plainList++physicalList++hiddenList
+ ] 
   ++
   [
   (( myModKey .|. m,k), a dir loop) |
@@ -149,33 +136,56 @@ myKeys=
                 (xK_bracketright, R), (xK_semicolon, L), (xK_at, U), (xK_colon, D)
               ] 
   ] 
-  where windowToScreenMaster dir loop = windowToScreen dir loop >> screenGo dir loop >> windows W.swapMaster
+  where plainList =  zip [xK_1 .. xK_9]  $ map (\ws ac -> ac ws)   myWorkspaces 
+        physicalList = zip [xK_w, xK_e, xK_r] $ map (\sc ac -> screenWorkspace sc >>= flip whenJust ac) [0..]
+        hiddenList = [(key, doTo dir (WSIs $ myHiddenWS wsType) order) |
+                       (key,dir,wsType,order) <- [ (xK_0,Next,EmptyWS,getSortByIndex)
+                                                 , (xK_minus,Prev,NonEmptyWS,getSortByIndex)
+                                                 , (xK_asciicircum,Next,NonEmptyWS,getSortByIndex)
+                                                 , (xK_u,Next,NonEmptyWS,getSortByHistory)
+                                                 ]
+                     ]                     
+        quickPrompt choices = clockColor >>= \c -> xmonadPromptC choices myXPConfig
+                                                 { fgColor = c
+                                                 , bgHLight = c
+                                                 , borderColor = c
+                                                 , autoComplete = Just 3
+                                                 , searchPredicate = DL.isPrefixOf
+                                                 }
+        shiftAndGo wid winset =  W.view wid $ W.shift wid winset  
+        myDecorateName ws w = do name <- show <$> getName w
+                                 winset <- gets windowset
+                                 let tag = W.tag ws
+                                 let (open,close) = if tag == W.currentTag winset then wrapCharsCurrent
+                                      else if isVisible tag winset then wrapCharsVisible else wrapCharsHidden
+                                 return $ name ++ " " ++ open ++ W.tag ws ++ close        
+        myWindowPrompt action c = windowPrompt c action (windowMap' myDecorateName)
+        windowToScreenMaster dir loop = windowToScreen dir loop >> screenGo dir loop >> windows W.swapMaster
         layoutOptions = [(key++":"++layout, sendMessage $ JumpToLayout layout) |
                            (key,layout) <- [("v","Tile"),("0","Full"),("1","Tab"),("2","Double") ]
-                        ]++[ ("r:Rotate",sendMessage (Toggle MIRROR))
-                           , ("n:Empty",pushToEmpty)
-                           ]
-        editLayout = clockColor >>= \c -> xmonadPromptC layoutOptions myXPConfig
-          { fgColor=c
-          , bgHLight=c
-          , borderColor=c
-          , autoComplete = Just 3
-          , searchPredicate = DL.isPrefixOf
-          }
-        pushToEmpty = doTo Next (WSIs $ myHiddenWS EmptyWS) getSortByIndex (\ws -> windows (W.shift ws) >> windows (W.view ws) >> printWs ) 
-        shiftAndGo i ws =  W.view i $ W.shift i ws
-        myDecorateName ws w= do name <- show <$> getName w
-                                winset <- gets windowset
-                                let tag = W.tag ws
-                                let (open,close) = if tag == W.currentTag winset then wrapCharsCurrent
-                                      else if isVisible tag winset then wrapCharsVisible else wrapCharsHidden
+                        ]
+                        ++
+                        [ ("r:Rotate",sendMessage (Toggle MIRROR))]
+        spawnOptions = [(key++":"++cmd,spawn cmd) |
+                        (key,cmd) <- [ ("d", "gjiten")
+                                     , ("e","emacs")
+                                     , ("i","google-chrome")
+                                     ]
+                       ]
+
+myDisableKeys = [((myModKey .|. shiftMask, xK_q))]
+
+getSortByHistory :: X WorkspaceSort
+getSortByHistory = mkWsSort $ do let cmp Nothing Nothing = EQ
+                                     cmp Nothing (Just _) = GT
+                                     cmp (Just _) Nothing = LT
+                                     cmp a b = compare a b
+                                 wh <- workspaceHistory   
+                                 let hcmp = on cmp (\x -> DL.elemIndex x wh)                                       
+                                 return hcmp
 
 
-                                return $ name ++ " " ++ open ++ W.tag ws ++ close
 
-        gotoPrompt c = windowPrompt c Goto (windowMap' myDecorateName)
-        bringPrompt c = windowPrompt c Bring (windowMap' myDecorateName)
-        
 myDynamicTheme :: DynamicTheme 
 myDynamicTheme = def{
   theme=do col<-clockColor
@@ -196,8 +206,8 @@ myDynamicTheme = def{
                        }  
   }
 
-myTabClickBindings btn win | btn==button1 = focus win
-                           | btn==button3 = focus win >> sendMessage SwapWindow
+myTabClickBindings btn win | btn == button1 = focus win
+                           | btn == button3 = focus win >> sendMessage SwapWindow
                            | otherwise    =  return ()
 
 myTiledLayout = renamed [Replace "Tile"] $ mkToggle (single REFLECTX) $ mkToggle (single MIRROR ) $ tall 
@@ -223,7 +233,7 @@ main = do
          , handleEventHook = handleEventHook gnomeConfig <+> fullscreenEventHook <+> handleTimerEvent
          , manageHook = myManageHook <+> manageHook gnomeConfig
          , workspaces = myWorkspaces
-         } `additionalKeys` myKeys  
+         } `additionalKeys` myKeys `removeKeys` myDisableKeys 
   
 pangoPP :: D.Client -> String -> PP
 pangoPP dbus col = def
@@ -317,20 +327,20 @@ setBorderColor col = do d <- asks display
 getWorkspacesString :: X String
 getWorkspacesString = do w <- gets windowset                         
                          screens <- getOrderedScreens
-                         return $ foldr (++) "" (DL.intersperse " " [ highlight (W.currentTag w)  (fromMaybe "" $ W.lookupWorkspace sc w)  | sc<-screens])
-                         where highlight curr ws = if curr==ws then wrapBy wrapCharsCurrent ws  else ws
+                         return $ foldr (++) "" (DL.intersperse " " [ highlight (W.currentTag w)  (fromMaybe "" $ W.lookupWorkspace sc w)  | sc <- screens])
+                         where highlight curr ws = if curr == ws then wrapBy wrapCharsCurrent ws  else ws
                          
-colourXP :: (XPConfig -> X() )  -> X()
-colourXP f = do c <-clockColor
-                f myXPConfig{ fgColor=c
-                            , bgHLight=c
-                            , borderColor=c
-                            }
+withColour :: (XPConfig -> X() )  -> X()
+withColour f = do c <-clockColor
+                  f myXPConfig{ fgColor = c
+                              , bgHLight = c
+                              , borderColor = c
+                              }
 
 printWs :: X ()
 printWs = do text <- getWorkspacesString
              c <-clockColor
-             flashText' def{st_bg=myBgColor, st_fg=c} 1 text
+             flashText' def{st_bg = myBgColor, st_fg = c} 1 text
 
 clockColor :: X String
 clockColor = do now<-io getTime
@@ -341,7 +351,7 @@ timeToColor time = let maxTime = 3600.0*23.0+60.0*59+61.0  :: Float
                        theta = 2*2*pi/maxTime *(  3600.0*(fromIntegral $ todHour time ) --2 cycles a day
                                               +  60.0* (fromIntegral $ todMin time)
                                               + realToFrac(todSec time))   :: Float
-                       [c,s]= [cos(theta),sin(theta)]
+                       (c,s) = (cos(theta),sin(theta))
                        hue = clip 0 1 $ -0.363*c+0.101*s+0.379 
                        sat = clip 0 mxs $ 0.100*c+0.360*s+0.758 where
                          mxs = min 1 $ 0.6+0.4*abs(hue-(2.0/3.0)) 
