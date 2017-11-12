@@ -252,19 +252,20 @@ main = do
 pangoPP :: D.Client -> String -> PP
 pangoPP dbus col = def
     { ppOutput   = dbusOutput dbus
-    , ppTitle    = myFormat "white" 
+    , ppTitle    = myFormat "white" sans 
     , ppTitleSanitize = pangoSanitize
-    , ppCurrent  = myFormat "gold" .  pangoSanitize . wrapBy wrapCharsCurrent
-    , ppVisible  = myFormat "darkorange" . pangoSanitize . wrapBy wrapCharsVisible
-    , ppHidden   = myFormat "white" . pangoSanitize . wrapBy wrapCharsHidden . onlyKnown
-    , ppUrgent   = myFormat "red" . pangoSanitize .wrapBy wrapCharsUrgent
-    , ppLayout   = myFormat col . pangoSanitize . wrapBy wrapCharsLayout
-    , ppSep      = pangoFont myFont " "
+    , ppCurrent  = myFormat "gold" mono .  pangoSanitize . wrapBy wrapCharsCurrent
+    , ppVisible  = myFormat "darkorange" mono . pangoSanitize . wrapBy wrapCharsVisible
+    , ppHidden   = myFormat "white" mono . pangoSanitize . wrapBy wrapCharsHidden . onlyKnown
+    , ppUrgent   = myFormat "red"  mono . pangoSanitize .wrapBy wrapCharsUrgent
+    , ppLayout   = myFormat col mono . pangoSanitize . wrapBy wrapCharsLayout
+    , ppSep      = pangoFont mono " "
     }
  where
     onlyKnown ws = if ws `elem` myWorkspaces then ws else "" --successive wraps return "" for a "" argument
-    myFont = "Monospace Bold 8" 
-    myFormat color = wrap ("<span foreground=\"" ++color++"\" font=\""++myFont++"\">") "</span>"
+    sans = "Sans Bold 8"
+    mono = "Monospace Bold 8" 
+    myFormat color font = wrap ("<span foreground=\"" ++color++"\" font=\""++font++"\">") "</span>"
 
 getWellKnownName :: D.Client -> IO ()
 getWellKnownName dbus = do
