@@ -8,7 +8,7 @@ import qualified Data.Text.Lazy as TL
 import Data.Time.LocalTime
 import Text.Printf
 import Control.Applicative((<$>))
-
+import Numeric (showHex)
 import XMonad hiding ( (|||) )
 import XMonad.Config.Gnome
 
@@ -95,9 +95,8 @@ myXPConfig = def{
   , fgHLight=myBgColor
   , bgHLight=myFgColor
   , borderColor=myFgColor
-  , searchPredicate = \a b -> DL.isInfixOf (toUpper a) (toUpper b) 
+  , searchPredicate = \a b -> DL.isInfixOf (toUpper a) (toUpper b)  
   , alwaysHighlight = True
-  , maxComplRows=Just 3 --not available in version 0.11
   }
 
 dmenu c = "dmenu_run -nb \""++(bgColor c)++"\" -nf \""++(fgColor c)++"\" -sb \""++(fgColor c)++"\" -sf \""++(bgColor c)++"\""
@@ -114,10 +113,10 @@ type NavAction = (Direction2D -> Bool -> X())
 
 myKeys=
  [ ((myModKey .|. shiftMask .|. controlMask, xK_q), io exitSuccess)
- , ((myModKey                , xK_g ), printWs >> withColour (myWindowPrompt Goto)  >> printWs)
- , ((myModKey                , xK_b ), printWs >> withColour (myWindowPrompt Bring) )
- , ((myModKey                , xK_p), withColour shellPrompt)
- , ((myModKey .|. shiftMask  , xK_p), withColour (spawn . dmenu) )
+ , ((myModKey                , xK_g ), printWs >> withColour myXPConfig (myWindowPrompt Goto)  >> printWs)
+ , ((myModKey                , xK_b ), printWs >> withColour myXPConfig (myWindowPrompt Bring) )
+ , ((myModKey                , xK_p), withColour myXPConfig{maxComplRows = Just 3} shellPrompt)
+ , ((myModKey .|. shiftMask  , xK_p), withColour myXPConfig (spawn . dmenu) )
  , ((myModKey .|. controlMask, xK_p), quickPrompt spawnOptions)
  , ((myModKey                , xK_s), sendMessage (Toggle REFLECTX) >> printWs)
  , ((myModKey .|. shiftMask  , xK_s), screenSwap L True >>printWs)
@@ -153,20 +152,20 @@ myKeys=
         navDirs = [ (xK_Right, R), (xK_Left, L), (xK_Up, U), (xK_Down, D),
                     (xK_bracketright, R), (xK_semicolon, L), (xK_at, U), (xK_colon, D)
                   ]  :: [(KeySym, Direction2D)]            
-        quickPrompt choices = clockColor >>= \c -> xmonadPromptC choices myXPConfig
-                                                 { fgColor = c
-                                                 , bgHLight = c
-                                                 , borderColor = c
-                                                 , autoComplete = Just 3
-                                                 , searchPredicate = DL.isPrefixOf
-                                                 }
+        quickPrompt choices = withColour c (xmonadPromptC choices)
+          where c = myXPConfig{searchPredicate = DL.isPrefixOf,  autoComplete = Just 3}
         shiftAndGo wid winset =  W.view wid $ W.shift wid winset  
         myDecorateName ws w = do name <- show <$> getName w
                                  winset <- gets windowset
                                  let tag = W.tag ws
-                                 let (open,close) = if tag == W.currentTag winset then wrapCharsCurrent
+                                     wsWindows = ((W.integrate' . W.stack) ws)
+                                 wsNamedWindows <- sequence $ map getName wsWindows
+                                 let wsNames = map show wsNamedWindows
+                                     ncopies = length $ filter (name ==) wsNames
+                                     wid = if ncopies >2 then " #" ++ showHex  w "" else ""
+                                     (open,close) = if tag == W.currentTag winset then wrapCharsCurrent
                                       else if isVisible tag winset then wrapCharsVisible else wrapCharsHidden
-                                 return $ name ++ " " ++ open ++ W.tag ws ++ close        
+                                 return $ open ++ W.tag ws ++ close ++ name ++ wid 
         myWindowPrompt action c = windowPrompt c action (windowMap' myDecorateName)
         windowToScreenMaster dir loop = windowToScreen dir loop >> screenGo dir loop >> windows W.swapMaster
         layoutOptions = [(key++":"++layout, sendMessage $ JumpToLayout layout) |
@@ -227,8 +226,8 @@ myTabClickBindings btn win | btn == button1 = focus win
 myTiledLayout = renamed [Replace "Tile"] $ mkToggle (single REFLECTX) $ mkToggle (single MIRROR ) $ tall 
   where tall =  Tall 1 (3/100) (1/2)  
 myTabbedLayout = renamed [Replace "Tab"] $ mkToggle (single REFLECTX) $  dynamicTabs D myDynamicTheme def
-myDoubleLayout = renamed [Replace "Double"] $ combineTwoP (TwoPane 0.03 0.5) tabLayout tabLayout (Const False)
-  where tabLayout = dynamicTabs D myDynamicTheme def{mouseClickBindings = myTabClickBindings}
+myDoubleLayout = renamed [Replace "Double"] $ combineTwoP (TwoPane 0.03 0.5) tabLayout tabLayout (Const False) where
+  tabLayout = dynamicTabs D myDynamicTheme def{mouseClickBindings = myTabClickBindings}
                                                                               
 main :: IO ()
 main = do
@@ -239,7 +238,7 @@ main = do
            $ ewmh gnomeConfig           
            { logHook = clockColor >>= (\col -> dynamicLogWithPP (pangoPP dbus col) <+> (setBorderColor col)) -- <+> fadeHook
          , mouseBindings = myMouseBindings
-         , layoutHook =  avoidStruts $ smartBorders  ( myTiledLayout ||| myDoubleLayout ||| myTabbedLayout ||| Full ) 
+         , layoutHook = avoidStruts $ smartBorders  (  myTiledLayout ||| myDoubleLayout ||| myTabbedLayout ||| Full )
          , normalBorderColor   =  myBgColor
          , focusedBorderColor =  myFgColor
          , modMask = myModKey 
@@ -345,12 +344,12 @@ getWorkspacesString = do w <- gets windowset
                          return $ foldr (++) "" (DL.intersperse " " [ highlight (W.currentTag w)  (fromMaybe "" $ W.lookupWorkspace sc w)  | sc <- screens])
                          where highlight curr ws = if curr == ws then wrapBy wrapCharsCurrent ws  else ws
                          
-withColour :: (XPConfig -> X() )  -> X()
-withColour f = do c <-clockColor
-                  f myXPConfig{ fgColor = c
-                              , bgHLight = c
-                              , borderColor = c
-                              }
+withColour :: XPConfig -> (XPConfig -> X() ) -> X()
+withColour c f = do col <-clockColor
+                    f c{ fgColor = col
+                       , bgHLight = col
+                       , borderColor = col
+                       }
 
 printWs :: X ()
 printWs = do text <- getWorkspacesString
