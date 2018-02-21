@@ -25,6 +25,7 @@
     jedi
     magit
     haskell-mode
+    mwim
 ))
 
 (mapc #'(lambda (package)
@@ -249,3 +250,12 @@
 (define-key
   global-map
   (kbd "C-;") 'hs-toggle-hiding)
+
+;for same file in multiple frames
+(setq ido-default-buffer-method 'selected-window)
+
+                                        ;Z80
+(load "~/.emacs.d/z80-mode.el")
+(add-to-list 'auto-mode-alist '("\\.asm\\'" . z80-mode))
+
+(setq-default indent-tabs-mode nil)
