@@ -164,10 +164,6 @@
 
 
 
-;(global-set-key (kbd "<f6>") (lambda()(if (get-buffer-window "nonnatropicale" visible) (message "hello") (lambda() 
-;                               (interactive)(split-window-below)
-;                               (interactive)(switch-to-buffer-other-window "nonnatropicale" ))))
-;)
 
 (defun close-if-exists (name)
 "close window if existing"
