@@ -120,7 +120,7 @@
  '(flymake-gui-warnings-enabled nil)
  '(package-selected-packages
    (quote
-    (magit tangotango-theme py-autopep8 mozc jedi flycheck-pyflakes elpy ein better-defaults))))
+    (haskell-mode magit tangotango-theme py-autopep8 mozc jedi flycheck-pyflakes elpy ein better-defaults))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -214,7 +214,6 @@
 (global-unset-key (kbd "C-z"))
 (add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
 (scroll-bar-mode 1)
-
 
 
 
