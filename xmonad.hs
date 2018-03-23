@@ -40,6 +40,7 @@ import XMonad.Actions.CycleWS
 import XMonad.Actions.Navigation2D
 import XMonad.Actions.SinkAll
 import XMonad.Actions.WindowBringer
+
   
 import XMonad.Prompt
 import XMonad.Prompt.Window
@@ -111,13 +112,31 @@ type WsAction = (WorkspaceId -> WindowSet -> WindowSet )
 type WithWsType = (WorkspaceId -> X () ) -> X()
 type NavAction = (Direction2D -> Bool -> X())
 
+[virtRight,virtLeft,virtUp,virtDown] = [xK_bracketright, xK_semicolon, xK_at, xK_colon]
+[mvirtRight,mvirtLeft,mvirtUp,mvirtDown] = [ xK_Page_Down, xK_Delete, xK_Home, xK_End]
+[virtBtn1,virtBtn3] = [xK_Insert,xK_Page_Up]  
+
+
+
+myMouseKeys =
+  [
+    ((myModKey .|. m ,key), spawn $ "xdotool mousemove_relative -- " ++ show (dx* mult) ++ " " ++ show (dy* mult))
+  | (m,mult) <- [(controlMask,1),(0,10),(shiftMask,100)],
+    (key,dx,dy) <-[(mvirtLeft,-1,0),(mvirtRight,1,0),(mvirtUp,0,-1),(mvirtDown,0,1)]
+  ]++
+  [
+    ((myModKey .|. m ,key), spawn $ "xdotool click " ++ show btn)
+    | (key,m,btn) <- [(virtBtn1,controlMask,1),(virtBtn3,controlMask,3),(virtBtn1,shiftMask,4),(virtBtn3,shiftMask,5)]
+  ]
+
+
 myKeys=
  [ ((myModKey .|. shiftMask .|. controlMask, xK_q), io exitSuccess)
  , ((myModKey                , xK_g ), printWs >> withColour myXPConfig (myWindowPrompt Goto)  >> printWs)
  , ((myModKey                , xK_b ), printWs >> withColour myXPConfig (myWindowPrompt Bring) )
  , ((myModKey                , xK_p), withColour myXPConfig{maxComplRows = Just 3} shellPrompt)
  , ((myModKey .|. shiftMask  , xK_p), withColour myXPConfig (spawn . dmenu) )
- , ((myModKey .|. controlMask, xK_p), quickPrompt spawnOptions)
+ , ((myModKey                , xK_x), quickPrompt spawnOptions)
  , ((myModKey                , xK_s), sendMessage (Toggle REFLECTX) >> printWs)
  , ((myModKey .|. shiftMask  , xK_s), screenSwap L True >>printWs)
  , ((myModKey .|. controlMask, xK_Return), sendMessage SwapWindow)
@@ -126,6 +145,8 @@ myKeys=
  , ((myModKey                , xK_BackSpace), scratchpadSpawnActionTerminal "urxvt") -- quake terminal
  , ((myModKey .|. controlMask, xK_BackSpace), spawn "gnome-screensaver-command -l")
  ]
+ ++
+ myMouseKeys
  ++
  makeKeybindings wsCombiner ((0,lazyView):wsActions) (withPlainWs++withHiddenWs) 
  ++
@@ -150,7 +171,7 @@ myKeys=
                      , (mod1Mask,(screenGo,True))
                      ] :: [(KeyMask,(NavAction,Bool))]
         navDirs = [ (xK_Right, R), (xK_Left, L), (xK_Up, U), (xK_Down, D),
-                    (xK_bracketright, R), (xK_semicolon, L), (xK_at, U), (xK_colon, D)
+                    (virtRight, R), (virtLeft, L), (virtUp, U), (virtDown, D)
                   ]  :: [(KeySym, Direction2D)]            
         quickPrompt choices = withColour c (xmonadPromptC choices)
           where c = myXPConfig{searchPredicate = DL.isPrefixOf,  autoComplete = Just 3}
@@ -173,12 +194,18 @@ myKeys=
                         ]
                         ++
                         [ ("r:Rotate",sendMessage (Toggle MIRROR))]
-        spawnOptions = [(key++":"++cmd,spawn cmd) |
-                        (key,cmd) <- [ ("d", "gjiten")
-                                     , ("e","emacs")
-                                     , ("i","google-chrome")
+        spawnOptions = [(key++":"++desc,spawn cmd) |
+                        (key,desc,cmd) <- [ ("d", "gjiten","gjiten")
+                                          , ("e","emacs","emacs")
+                                          , ("i","google-chrome","google-chrome")
+                                          , ("tt","term trasnp"," gconftool-2 --set /apps/gnome-terminal/profiles/Default/background_darkness --type=float 0")
+                                          , ("th","term halftr"," gconftool-2 --set /apps/gnome-terminal/profiles/Default/background_darkness --type=float 0.5")
+                                          , ("to","term opaque"," gconftool-2 --set /apps/gnome-terminal/profiles/Default/background_darkness --type=float 1")
+                                          ,("pon","proxy on","gsettings set org.gnome.system.proxy mode 'manual'")
+                                          ,("poff","proxy off","gsettings set org.gnome.system.proxy mode 'none'")
                                      ]
                        ]
+
 
 myDisableKeys = [((myModKey .|. shiftMask, xK_q))]
 
