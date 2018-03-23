@@ -130,6 +130,17 @@ myMouseKeys =
   ]
 
 
+
+makeTermCmds:: String -> [String] -> [(String,String,String)]
+makeTermCmds setter vals = [ ("tt","term trasnp",setter++(vals!!0) ), ("th","term halftr",setter++(vals!!1) ), ("to","term opaque",setter++(vals!!2) )] 
+
+
+
+gconfCmds=makeTermCmds "gconftool-2 --set /apps/gnome-terminal/profiles/Default/background_darkness --type=float " ["0","0.5","1"]
+dconfCmds=makeTermCmds "dconf write \"/org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/background-transparency-percent\" " ["100", "50", "0"] 
+
+          
+
 myKeys=
  [ ((myModKey .|. shiftMask .|. controlMask, xK_q), io exitSuccess)
  , ((myModKey                , xK_g ), printWs >> withColour myXPConfig (myWindowPrompt Goto)  >> printWs)
@@ -198,12 +209,9 @@ myKeys=
                         (key,desc,cmd) <- [ ("d", "gjiten","gjiten")
                                           , ("e","emacs","emacs")
                                           , ("i","google-chrome","google-chrome")
-                                          , ("tt","term trasnp"," gconftool-2 --set /apps/gnome-terminal/profiles/Default/background_darkness --type=float 0")
-                                          , ("th","term halftr"," gconftool-2 --set /apps/gnome-terminal/profiles/Default/background_darkness --type=float 0.5")
-                                          , ("to","term opaque"," gconftool-2 --set /apps/gnome-terminal/profiles/Default/background_darkness --type=float 1")
                                           ,("pon","proxy on","gsettings set org.gnome.system.proxy mode 'manual'")
                                           ,("poff","proxy off","gsettings set org.gnome.system.proxy mode 'none'")
-                                     ]
+                                          ]++dconfCmds
                        ]
 
 
