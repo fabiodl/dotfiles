@@ -36,14 +36,39 @@
 ;; BASIC CUSTOMIZATION
 ;; --------------------------------------
 
-(setq inhibit-startup-message t) ;; hide the startup message
+(setq inhibit-startup-message t) ; hide the startup message
 
-(if (display-graphic-p) 
-    (load-theme 'tangotango t) 
-)
+(load-theme 'tangotango t)
 
-(global-linum-mode t) ;; enable line numbers globally
-(setq column-number-mode t) ;;column number
+;background color
+(defun set-new-frame-colors (frame)
+  (if (window-system frame)
+      (set-face-background 'default "black" frame)
+      (set-face-background 'default "unspecified-bg" frame)))
+;;these hooks are for server mode and standalone mode, respectively
+(add-hook 'after-make-frame-functions 'set-new-frame-colors)
+(add-hook 'window-setup-hook '(lambda() (set-new-frame-colors (selected-frame))))
+
+(global-linum-mode t) ; enable line numbers globally
+(setq column-number-mode t) ;column number
+
+(setq mouse-autoselect-window t)  ;sloppy focus
+
+;;server
+(require 'server)
+(unless (server-running-p) (server-start))
+
+(global-unset-key (kbd "C-z"))
+(scroll-bar-mode t)
+(menu-bar-mode t)
+
+;;set transparency
+(set-frame-parameter (selected-frame) 'alpha '(100 . 60))
+(add-to-list 'default-frame-alist '(alpha . (100 . 60)))
+
+;;allow the same file in multiple frames
+(setq ido-default-buffer-method 'selected-window)
+
 
 ;; PYTHON CONFIGURATION
 ;; --------------------------------------
@@ -62,17 +87,34 @@
 (require 'py-autopep8)
 (add-hook 'elpy-mode-hook 'py-autopep8-enable-on-save)
 
-
 (setq ein:use-auto-complete t)
 
 (global-auto-complete-mode t)
 
 (add-hook 'python-mode-hook 'jedi:setup)
-;(setq jedi:complete-on-dot t)                 ; optional
+(setq jedi:complete-on-dot t)                 ; optional
+
+;;hide flycheck warnings
+;(set-face-attribute 'flycheck-fringe-warning nil :foreground (face-attribute 'fringe :background ))
+(set-face-attribute 'flycheck-warning nil :underline nil)
+(setq flycheck-highlighting-mode 'lines)
+
+;;fix ein authentication bug
+(advice-add 'request--netscape-cookie-parse :around #'fix-request-netscape-cookie-parse)
+
+;;make transparent figures visible
+(defadvice ein:insert-image (around ein-transparent-color-replacement activate)
+  (ad-set-args 0 (append (ad-get-args 0) `(:background ,(face-attribute 'ein:cell-output-area :background))  )) ad-do-it)
+
+(defadvice ein:cell-append-display-data (around ein-transparent-color-replacement activate)
+  (ein:insert-read-only  "\n ")
+  ad-do-it
+  (ein:insert-read-only "\n")
+  )
 
 
-
-
+;; JAPANESE
+;; --------------------------------------
 
 (require 'mozc)
 ;; or (load-file "/path/to/mozc.el")
@@ -82,96 +124,57 @@
 (global-set-key (kbd "<zenkaku-hankaku>") 'toggle-input-method)
 
 
-(setq saved-cursor-color  (frame-parameter nil 'cursor-color))
+;; CURSOR COLOR
+;; --------------------------------------
 
+;(setq saved-cursor-color  (frame-parameter nil 'cursor-color))
 
- ;; Change cursor color according to mode
-    (defvar hcz-set-cursor-color-color "")
-    (defvar hcz-set-cursor-color-buffer "")
-    (defun hcz-set-cursor-color-according-to-mode ()
-      "change cursor color according to some minor modes."
-      ;; set-cursor-color is somewhat costly, so we only call it when needed:
-      (let ((color
-             (if buffer-read-only "white"
-               (if overwrite-mode "orange"
-               (if mozc-mode "red"
-;;                 saved-cursor-color
-                 "SkyBlue"
-)))))
-        (unless (and
-                 (string= color hcz-set-cursor-color-color)
-                 (string= (buffer-name) hcz-set-cursor-color-buffer))
-          (set-cursor-color (setq hcz-set-cursor-color-color color))
-          (setq hcz-set-cursor-color-buffer (buffer-name)))))
-    (add-hook 'post-command-hook 'hcz-set-cursor-color-according-to-mode)
+;; Change cursor color according to mode
+(defun get-my-cursor-color()
+  (cond (buffer-read-only "white")
+        (overwrite-mode "orange")
+        (mozc-mode "red")
+        (t "SkyBlue") ;saved-cursor-color
+   )     
+  )
+(defvar hcz-set-cursor-color-color "")
+(defvar hcz-set-cursor-color-buffer "")
+(defun hcz-set-cursor-color-according-to-mode ()
+  "change cursor color according to some minor modes."
+  ;; set-cursor-color is somewhat costly, so we only call it when needed:
+  (let ((color (get-my-cursor-color) ))
+    (unless (and
+             (string= color hcz-set-cursor-color-color)
+             (string= (buffer-name) hcz-set-cursor-color-buffer))
+      (set-cursor-color (setq hcz-set-cursor-color-color color))
+      (setq hcz-set-cursor-color-buffer (buffer-name)))))
 
+(add-hook 'post-command-hook 'hcz-set-cursor-color-according-to-mode)
+(add-hook 'focus-in-hook '(lambda() (set-cursor-color (get-my-cursor-color))))
 
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(custom-safe-themes
-   (quote
-    ("aee1f5a2825f6752eb447c0d1b480b672c354adf3b012f607a753ad09cc9b942" "1c50040ec3b3480b1fec3a0e912cac1eb011c27dd16d087d61e72054685de345" "b3380cb88fcc06ac42577ba9c2701e4cf0e5e60466b62ae94c76aabc132fdcdd" "5999e12c8070b9090a2a1bbcd02ec28906e150bb2cdce5ace4f965c76cf30476" "8abee8a14e028101f90a2d314f1b03bed1cde7fd3f1eb945ada6ffc15b1d7d65" default)))
- '(erc-modules
-   (quote
-    (autojoin button completion fill irccontrols list match menu move-to-prompt netsplit networks noncommands notify readonly ring stamp track)))
- '(flymake-gui-warnings-enabled nil)
- '(package-selected-packages
-   (quote
-    (haskell-mode magit tangotango-theme py-autopep8 mozc jedi flycheck-pyflakes elpy ein better-defaults))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(erc-input-face ((t (:foreground "SeaGreen4"))))
- '(erc-my-nick-face ((t (:foreground "royal blue" :weight bold))))
- '(erc-pal-face ((t (:foreground "light pink" :weight bold))))
- '(erc-timestamp-face ((t (:foreground "sea green" :weight bold)))))
-
-
-(set-face-attribute 'default nil
-                        :background "black")
-
-;;hide flycheck warnings
-;(set-face-attribute 'flycheck-fringe-warning nil :foreground (face-attribute 'fringe :background ))
-(set-face-attribute 'flycheck-warning nil :underline nil)
-(setq flycheck-highlighting-mode 'lines)
-(require 'socks)
-
-(when (load "erc" t)
-(setq erc-server "irc.freenode.net")
-
-;;(setq erc-port "6697") ;;enable this for tls
-(setq erc-nick "nick")
-(setq erc-pals '("pal"))
-(setq erc-hide-list '("JOIN" "PART" "QUIT"))
-(setq erc-notify-list '("pal"))
-(setq erc-interpret-mirc-color t)
-;;for proxy
-(setq erc-server-connect-function 'socks-open-network-stream)
-(setq socks-server (list "cyg" "localhost" 8080 5))
-)
+;; DIARY
+;; --------------------------------------
 
 (require 'appt)
-(setq appt-message-warning-time 3)      ; 0 minute time before warning
-;(setq diary-file "~/diary")             ; diary file
+(setq appt-message-warning-time 3)       ;minute time before warning
+;(setq diary-file "~/diary")             ;diary file
 (setq appt-display-diary nil)            ;do not show the full diary when starting emacs
 (setq appt-display-mode-line t)
 (appt-activate 1)
 
+;; TOGGLE WINDOWS
+;; --------------------------------------
 
-
+(defvar fast-close-buffers "buffers to close with the defined key")
+(defvar fast-toggle-buffers "a list of pairs key-buffername")
 
 (defun close-if-exists (name)
 "close window if existing"
   (ignore-errors (delete-windows-on name ))
 )
 
-(defun erc-closeall ()
-  (mapcar 'close-if-exists '("win1" "win2") )
+(defun closeall-fast-close-buffers()
+  (mapcar 'close-if-exists fast-close-buffers)
 )
 
 (defun toggle-buffer-visibility (buffername)
@@ -183,40 +186,34 @@
     (progn
       (split-window-below)
       ; (switch-to-buffer buffername)
-      (switch-to-buffer-other-window buffername      )
+      (switch-to-buffer-other-window buffername)
       ) 
     )
   )
-  
+
+;https://emacs.stackexchange.com/questions/10394/scope-in-lambda
+(defun assign-key-to-buffer-toggle (key buffername)
+  (global-set-key (kbd key) `(lambda() (interactive) (toggle-buffer-visibility ,buffername)))
+  )
 
 
-(global-set-key (kbd "<f5>") (lambda() (interactive) (toggle-buffer-visibility "pal")))
-(global-set-key (kbd "M-<f5>") (lambda() (interactive) (toggle-buffer-visibility "pal_")))
-(global-set-key (kbd "S-<f5>") (lambda() (interactive) (toggle-buffer-visibility "irc.freenode.net:6667")))
-(global-set-key (kbd "<f9>") (lambda() (interactive) (erc-closeall)))
-(global-set-key (kbd "<muhenkan>") (lambda() (interactive) (erc-closeall)))
+(let ((erc-settings-file "~/.emacs.d/erc-settings.el"))
+ (when (file-exists-p erc-settings-file)
+   (load-file erc-settings-file))
+)
+
+(mapcar #'(lambda(pair) (assign-key-to-buffer-toggle (car pair) (cadr pair) )) fast-toggle-buffers)  
+(global-set-key (kbd "<f9>") (lambda() (interactive) (closeall-fast-close-buffers)))
 
 
 
-(set-frame-parameter (selected-frame) 'alpha '(100 . 60))
-(add-to-list 'default-frame-alist '(alpha . (100 . 60)))
 
+;; CODING
+;; --------------------------------------
 
-(setq mouse-autoselect-window t)
-(menu-bar-mode 1)
-
-(server-start)
-
-(global-unset-key (kbd "C-z"))
 (add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
-(scroll-bar-mode 1)
 
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;
 ;;; For folding
-;;;
 (require 'hideshow)
 ;; C coding style
 (add-hook 'c-mode-hook
@@ -241,16 +238,42 @@
 (add-hook 'python-mode-hook
           '(lambda ()
 	    (hs-minor-mode 1)))
-;; 
-(define-key
-  global-map
-  (kbd "C-;") 'hs-toggle-hiding)
 
-;for same file in multiple frames
-(setq ido-default-buffer-method 'selected-window)
+(define-key global-map (kbd "C-;") 'hs-toggle-hiding)
 
-                                        ;Z80
+
+;Z80
 (load "~/.emacs.d/z80-mode.el")
 (add-to-list 'auto-mode-alist '("\\.asm\\'" . z80-mode))
-
+(add-to-list 'auto-mode-alist '("\\.i\\'" . z80-mode))
+(add-to-list 'ac-modes 'z80-mode)
 (setq-default indent-tabs-mode nil)
+
+
+
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(custom-safe-themes
+   (quote
+    (default)))
+ '(erc-modules
+   (quote
+    (autojoin button completion fill irccontrols list match menu move-to-prompt netsplit networks noncommands notify readonly ring stamp track)))
+ '(flymake-gui-warnings-enabled nil)
+ '(package-selected-packages
+   (quote
+    (mwim magit tangotango-theme py-autopep8 mozc jedi flycheck-pyflakes elpy ein better-defaults))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(ein:cell-output-area ((t (:background "LightSteelBlue1" :foreground "black"))) t)
+ '(erc-input-face ((t (:foreground "SeaGreen4"))))
+ '(erc-my-nick-face ((t (:foreground "royal blue" :weight bold))))
+ '(erc-pal-face ((t (:foreground "light pink" :weight bold))))
+ '(erc-timestamp-face ((t (:foreground "sea green" :weight bold)))))
+
