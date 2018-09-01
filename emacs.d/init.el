@@ -166,7 +166,7 @@
 ;; --------------------------------------
 
 (defvar fast-close-buffers nil "buffers to close with the defined key")
-(defvar fast-toggle-buffers nil "a list of pairs key-buffername"")
+(defvar fast-toggle-buffers nil "a list of pairs key-buffername")
 
 (defun close-if-exists (name)
 "close window if existing"
