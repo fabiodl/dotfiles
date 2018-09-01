@@ -74,7 +74,7 @@
 ;; --------------------------------------
 
 (elpy-enable)
-(elpy-use-ipython)
+;(elpy-use-ipython)
 (setq python-shell-interpreter "ipython"
     python-shell-interpreter-args "--simple-prompt -i")
 
@@ -165,8 +165,8 @@
 ;; TOGGLE WINDOWS
 ;; --------------------------------------
 
-(defvar fast-close-buffers "buffers to close with the defined key")
-(defvar fast-toggle-buffers "a list of pairs key-buffername")
+(defvar fast-close-buffers nil "buffers to close with the defined key")
+(defvar fast-toggle-buffers nil "a list of pairs key-buffername"")
 
 (defun close-if-exists (name)
 "close window if existing"
