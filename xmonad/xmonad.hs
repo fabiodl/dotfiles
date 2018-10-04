@@ -11,6 +11,7 @@ import Control.Applicative((<$>))
 import Numeric (showHex)
 import XMonad hiding ( (|||) )
 import XMonad.Config.Gnome
+import XMonad.Operations as Ope
 
 import qualified DBus as D
 import qualified DBus.Client as D
@@ -83,6 +84,7 @@ myManageHook = composeAll
     , className =? "Cairo-dock" --> doFloat
     , className =? "platform-Emulicious" -->doFloat
     ]  <+> scratchpadManageHook (W.RationalRect 0 0 1 0.3)
+--   where doSink = ask >>= \w -> doF (W.sink w)
 
 myWorkspaces = map show [1..9]
 
@@ -135,14 +137,35 @@ makeTermCmds:: String -> [String] -> [(String,String,String)]
 makeTermCmds setter vals = [ ("tt","term trasnp",setter++(vals!!0) ), ("th","term halftr",setter++(vals!!1) ), ("to","term opaque",setter++(vals!!2) )] 
 
 
-
 gconfCmds=makeTermCmds "gconftool-2 --set /apps/gnome-terminal/profiles/Default/background_darkness --type=float " ["0","0.5","1"]
 dconfCmds=makeTermCmds "dconf write \"/org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/background-transparency-percent\" " ["100", "50", "0"] 
 
-          
 
+
+floatWindow :: X()
+floatWindow = withDisplay $ \display ->
+              withFocused $ \window ->
+                              do
+                                sh <- io $ getWMNormalHints display window                                                                  
+                                let minsize = sh_min_size sh
+                                    maxsize = sh_max_size sh
+                                    
+                                case (minsize,maxsize) of
+                                  (Just (minw,minh), Just (maxw,maxh)) -> io (resizeWindow display window midw midh)
+                                                                            where
+                                                                              avg a b = ceiling $ fromIntegral(a+b) / 2
+                                                                              midw = avg minw maxw
+                                                                              midh = avg minh maxh
+                                                                              
+                                  _ -> return ()
+                                Ope.float window                       
+  
+                                            
+   
+  
 myKeys=
  [ ((myModKey .|. shiftMask .|. controlMask, xK_q), io exitSuccess)
+ , ((myModKey                , xK_q ), restart "/home/fabio/.xmonad/xmonad-x86_64-linux" True)
  , ((myModKey                , xK_g ), printWs >> withColour myXPConfig (myWindowPrompt Goto)  >> printWs)
  , ((myModKey                , xK_b ), printWs >> withColour myXPConfig (myWindowPrompt Bring) )
  , ((myModKey                , xK_p), withColour myXPConfig{maxComplRows = Just 3} shellPrompt)
@@ -152,6 +175,7 @@ myKeys=
  , ((myModKey .|. shiftMask  , xK_s), screenSwap L True >>printWs)
  , ((myModKey .|. controlMask, xK_Return), sendMessage SwapWindow)
  , ((myModKey .|. shiftMask  , xK_t), sinkAll >> printWs)
+ , ((myModKey                , xK_f), floatWindow)
  , ((myModKey                , xK_v), quickPrompt layoutOptions)
  , ((myModKey                , xK_BackSpace), scratchpadSpawnActionTerminal "urxvt") -- quake terminal
  , ((myModKey .|. controlMask, xK_BackSpace), spawn "gnome-screensaver-command -l")
@@ -211,7 +235,7 @@ myKeys=
                                           , ("i","google-chrome","google-chrome")
                                           ,("pon","proxy on","gsettings set org.gnome.system.proxy mode 'manual'")
                                           ,("poff","proxy off","gsettings set org.gnome.system.proxy mode 'none'")
-                                          ]++gconfCmds
+                                          ]++dconfCmds
                        ]
 
 
