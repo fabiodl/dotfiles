@@ -53,6 +53,7 @@ import XMonad.Util.XUtils(stringToPixel)
 import XMonad.Util.WorkspaceCompare
 import XMonad.Util.NamedWindows (getName)
 import XMonad.Util.EZConfig(additionalKeys,removeKeys)
+import XMonad.Util.NamedScratchpad
 
 import CenteredFlash
 import DynamicDecoration
@@ -83,8 +84,13 @@ myManageHook = composeAll
     , className =? "com-mathworks-util-PostVMInit" --> doFloat
     , className =? "Cairo-dock" --> doFloat
     , className =? "platform-Emulicious" -->doFloat
-    ]  <+> scratchpadManageHook (W.RationalRect 0 0 1 0.3)
---   where doSink = ask >>= \w -> doF (W.sink w)
+    ]  -- <+> scratchpadManageHook rect
+       <+> myScratchpadHook (W.RationalRect 0 0 1 0.3) ["scratchpad"]
+       <+> myScratchpadHook (W.RationalRect 0 0.7 1 0.3) ["ipython"]
+  where
+    scratchpadQuery winNames = fmap (\x -> elem x winNames) resource --checks if the window name is in the winNames list
+    myScratchpadHook rect winNames = namedScratchpadManageHook [NS "" "" (scratchpadQuery winNames) (customFloating rect)]
+-- doSink = ask >>= \w -> doF (W.sink w)
 
 myWorkspaces = map show [1..9]
 
@@ -142,30 +148,28 @@ dconfCmds=makeTermCmds "dconf write \"/org/gnome/terminal/legacy/profiles:/:b1dc
 
 
 
-floatWindow :: X()
+floatWindow :: X ()
 floatWindow = withDisplay $ \display ->
-              withFocused $ \window ->
-                              do
-                                sh <- io $ getWMNormalHints display window                                                                  
-                                let minsize = sh_min_size sh
-                                    maxsize = sh_max_size sh
-                                    
-                                case (minsize,maxsize) of
-                                  (Just (minw,minh), Just (maxw,maxh)) -> io (resizeWindow display window midw midh)
-                                                                            where
-                                                                              avg a b = ceiling $ fromIntegral(a+b) / 2
-                                                                              midw = avg minw maxw
-                                                                              midh = avg minh maxh
+  withFocused $ \window -> do
+    sh <- io $ getWMNormalHints display window
+    let minsize = sh_min_size sh
+        maxsize = sh_max_size sh
+    case (minsize, maxsize) of
+      (Just (minw, minh), Just (maxw, maxh)) -> io (resizeWindow display window midw midh)
+        where avg a b = ceiling $ fromIntegral (a + b) / 2
+              midw = avg minw maxw
+              midh = avg minh maxh
                                                                               
-                                  _ -> return ()
-                                Ope.float window                       
+      _ -> return ()
+    Ope.float window
   
-                                            
-   
+scratchTerminal = "urxvt"
+scratchpadSpawnProgram prog winName =  namedScratchpadAction [NS winName prog (resource =? winName) nonFloating] winName
+scratchpadSpawnTerminalProgram prog winName = scratchpadSpawnProgram (scratchTerminal++" -name "++winName++" -e "++prog) winName
+
   
 myKeys=
  [ ((myModKey .|. shiftMask .|. controlMask, xK_q), io exitSuccess)
- , ((myModKey                , xK_q ), restart "/home/fabio/.xmonad/xmonad-x86_64-linux" True)
  , ((myModKey                , xK_g ), printWs >> withColour myXPConfig (myWindowPrompt Goto)  >> printWs)
  , ((myModKey                , xK_b ), printWs >> withColour myXPConfig (myWindowPrompt Bring) )
  , ((myModKey                , xK_p), withColour myXPConfig{maxComplRows = Just 3} shellPrompt)
@@ -177,8 +181,11 @@ myKeys=
  , ((myModKey .|. shiftMask  , xK_t), sinkAll >> printWs)
  , ((myModKey                , xK_f), floatWindow)
  , ((myModKey                , xK_v), quickPrompt layoutOptions)
- , ((myModKey                , xK_BackSpace), scratchpadSpawnActionTerminal "urxvt") -- quake terminal
+ , ((myModKey .|. shiftMask  , xK_BackSpace), scratchpadSpawnActionTerminal scratchTerminal) 
+ , ((myModKey                , xK_BackSpace), scratchpadSpawnTerminalProgram "ipython" "ipython" ) 
  , ((myModKey .|. controlMask, xK_BackSpace), spawn "gnome-screensaver-command -l")
+ , ((myModKey                , xK_F5), scratchpadSpawnProgram "slack" "slack") 
+ , ((myModKey                , xK_F9), scratchpadSpawnProgram "firefox" "Navigator") 
  ]
  ++
  myMouseKeys
