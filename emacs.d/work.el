@@ -74,28 +74,33 @@
   (add-to-list 'wl-summary-sort-specs 'reply-date))
 
 ;; from https://github.com/dholm/dotemacs/blob/master/.emacs.d/lisp/apps/wanderlust.el
+
+(defun string-max2 (x y)
+  (cond ((string< x y) y)
+        ('t x)))
+
+(defun thread-number-get-date (x)
+  (timezone-make-date-sortable (elmo-msgdb-overview-entity-get-date
+                                (elmo-message-entity
+                                 wl-summary-buffer-elmo-folder x))))
+
+(defun thread-get-family (x)
+  (cons x (wl-thread-entity-get-descendant (wl-thread-get-entity x))))
+
+(defun max-reply-date (x)
+  (cond ((eq 'nil x)
+         'nil)
+        ((eq 'nil (cdr x))
+         (thread-number-get-date (car x)))
+        ('t
+         (string-max2 (thread-number-get-date (car x))
+                      (max-reply-date (cdr x))))))
+
 (defun wl-summary-overview-entity-compare-by-reply-date (a b)
   "Compare message A and B by latest date of replies including thread."
-  (cl-flet ((string-max2 (x y)
-                         (cond ((string< x y) y)
-                               ('t x)))
-            (thread-number-get-date (x)
-                                    (timezone-make-date-sortable (elmo-msgdb-overview-entity-get-date
-                                                                  (elmo-message-entity
-                                                                   wl-summary-buffer-elmo-folder x))))
-            (thread-get-family (x)
-                               (cons x (wl-thread-entity-get-descendant (wl-thread-get-entity x))))
-            (max-reply-date (x)
-                            (cond ((eq 'nil x)
-                                   'nil)
-                                  ((eq 'nil (cdr x))
-                                   (thread-number-get-date (car x)))
-                                  ('t
-                                   (string-max2 (thread-number-get-date (car x))
-                                                (max-reply-date (cdr x)))))))
-    (string<
-     (max-reply-date (thread-get-family (elmo-message-entity-number a)))
-     (max-reply-date (thread-get-family (elmo-message-entity-number b))))))
+  (string<
+   (max-reply-date (thread-get-family (elmo-message-entity-number a)))
+   (max-reply-date (thread-get-family (elmo-message-entity-number b)))))
 
 
 (defun sort-by-rev-date () 
