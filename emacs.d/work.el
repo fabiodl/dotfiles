@@ -104,7 +104,7 @@
 
 
 (defun sort-by-rev-date () 
-   (wl-summary-rescan "reply-date"))
+   (wl-summary-rescan "!reply-date"))
 
 (add-hook 'wl-summary-prepared-hook 'sort-by-rev-date)
 
