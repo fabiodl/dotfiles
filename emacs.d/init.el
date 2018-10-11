@@ -26,12 +26,16 @@
     magit
     haskell-mode
     mwim
+    google-translate
 ))
 
-(mapc #'(lambda (package)
-          (unless (package-installed-p package)
-            (package-install package)))
-      myPackages)
+(defun install-missing-packages (package-list)
+  (mapc #'(lambda (package)
+            (unless (package-installed-p package)
+              (package-install package)))
+        package-list))
+
+(install-missing-packages myPackages)
 
 ;; BASIC CUSTOMIZATION
 ;; --------------------------------------
@@ -39,7 +43,7 @@
 (setq inhibit-startup-message t) ; hide the startup message
 
 (load-theme 'tangotango t)
-
+(require 'better-defaults)
 ;background color
 (defun set-new-frame-colors (frame)
   (if (window-system frame)
@@ -49,7 +53,9 @@
 (add-hook 'after-make-frame-functions 'set-new-frame-colors)
 (add-hook 'window-setup-hook '(lambda() (set-new-frame-colors (selected-frame))))
 
-(global-linum-mode t) ; enable line numbers globally
+;(global-linum-mode t) ; enable line numbers globally
+(add-hook 'prog-mode-hook 'linum-mode)
+
 (setq column-number-mode t) ;column number
 
 (setq mouse-autoselect-window t)  ;sloppy focus
@@ -100,7 +106,7 @@
 (setq flycheck-highlighting-mode 'lines)
 
 ;;fix ein authentication bug
-(advice-add 'request--netscape-cookie-parse :around #'fix-request-netscape-cookie-parse)
+;(advice-add 'request--netscape-cookie-parse :around #'fix-request-netscape-cookie-parse)
 
 ;;make transparent figures visible
 (defadvice ein:insert-image (around ein-transparent-color-replacement activate)
@@ -122,6 +128,26 @@
 (setq default-input-method "japanese-mozc")
 (prefer-coding-system 'utf-8)
 (global-set-key (kbd "<zenkaku-hankaku>") 'toggle-input-method)
+
+(require 'google-translate)
+(require 'google-translate-smooth-ui)
+(global-set-key "\C-ct" 'google-translate-smooth-translate)
+(setq google-translate-translation-directions-alist '(("ja" . "en"))
+      google-translate-show-phonetic t
+      )
+
+(add-to-list 'face-ignored-fonts "Noto Serif CJK")
+(add-to-list 'face-ignored-fonts "Noto Sans CJK")
+
+
+;; WINDOWS NAVIGATION
+;; --------------------------------------
+
+(global-set-key (kbd "C-c <left>")  'windmove-left)
+(global-set-key (kbd "C-c <right>") 'windmove-right)
+(global-set-key (kbd "C-c <up>")    'windmove-up)
+(global-set-key (kbd "C-c <down>")  'windmove-down)
+
 
 
 ;; CURSOR COLOR
@@ -155,12 +181,31 @@
 ;; DIARY
 ;; --------------------------------------
 
+
+(add-hook 'diary-list-entries-hook 'diary-include-other-diary-files)
+(add-hook 'diary-mark-entries-hook 'diary-mark-included-diary-files)
+
 (require 'appt)
-(setq appt-message-warning-time 3)       ;minute time before warning
-;(setq diary-file "~/diary")             ;diary file
-(setq appt-display-diary nil)            ;do not show the full diary when starting emacs
-(setq appt-display-mode-line t)
-(appt-activate 1)
+(require 'notifications)
+(defun my-appt-display (time-to-event curr-time message)
+ (notifications-notify :title message
+                       :body (format "In %s minutes" time-to-event)
+                       :app-name "Emacs: Org"
+                       :sound-name "alarm-clock-elapsed"
+                       :timeout (if (string= "0" time-to-event) 0 -1)
+                      )
+  (appt-disp-window time-to-event curr-time message)
+ )
+
+(setq appt-disp-window-function 'my-appt-display)
+
+(setq appt-message-warning-time 12       ;from how much before
+      appt-display-interval 3            ;interval betwen reminders
+      appt-display-diary nil             ;do not show the full diary when starting emacs
+      appt-display-mode-line t
+      )      
+
+(appt-activate t)
 
 ;; TOGGLE WINDOWS
 ;; --------------------------------------
@@ -193,14 +238,15 @@
 
 ;https://emacs.stackexchange.com/questions/10394/scope-in-lambda
 (defun assign-key-to-buffer-toggle (key buffername)
-  (global-set-key (kbd key) `(lambda() (interactive) (toggle-buffer-visibility ,buffername)))
-  )
+  (global-set-key (kbd key) `(lambda() (interactive) (toggle-buffer-visibility ,buffername))))
 
 
-(let ((erc-settings-file "~/.emacs.d/erc-settings.el"))
- (when (file-exists-p erc-settings-file)
-   (load-file erc-settings-file))
-)
+(defun load-file-when-existing(fname)
+  "loads the file if it exists" 
+  (when (file-exists-p fname)
+    (load-file fname)))
+
+(load-file-when-existing "~/.emacs.d/erc-settings.el")
 
 (mapcar #'(lambda(pair) (assign-key-to-buffer-toggle (car pair) (cadr pair) )) fast-toggle-buffers)  
 (global-set-key (kbd "<f9>") (lambda() (interactive) (closeall-fast-close-buffers)))
@@ -251,21 +297,13 @@
 
 
 
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(custom-safe-themes
-   (quote
-    (default)))
- '(erc-modules
-   (quote
-    (autojoin button completion fill irccontrols list match menu move-to-prompt netsplit networks noncommands notify readonly ring stamp track)))
- '(flymake-gui-warnings-enabled nil)
- '(package-selected-packages
-   (quote
-    (mwim magit tangotango-theme py-autopep8 mozc jedi flycheck-pyflakes elpy ein better-defaults))))
+
+
+;; WORK RELATED
+;; --------------------------------------
+(load "~/.emacs.d/work.el")
+
+
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

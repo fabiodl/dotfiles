@@ -1,0 +1,8 @@
+*settings.el
+*.o
+*.hi
+/emacs.d/ac-comphist.dat
+/emacs.d/auto-save-list/
+/emacs.d/backups/
+/emacs.d/elpa
+/emacs.d/ido.last
