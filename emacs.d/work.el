@@ -139,10 +139,21 @@
                                       "^From:"
                                       "^Subject:"
                                       "^Date:")
-      wl-summary-auto-refile-skip-marks nil ;to auto-refile under messages
+      wl-summary-auto-refile-skip-marks nil ;to auto-refile unread messages
+
       )
 
+;;to fix =iso-2022-jp... in headers
+;;source http://d.hatena.ne.jp/siwazaki/20080102/1199283553
 
+(defun eword-decode-cr (s &optional start-column max-column)
+"eword-decode-and-unfold-unstructured-field-body w\ carriage returns"
+(string-join (split-string (eword-decode-and-unfold-unstructured-field-body s) ",") ",\n"))
+
+(mime-set-field-decoder
+ 'From nil 'eword-decode-and-unfold-structured-field-body)
+(mime-set-field-decoder
+ 'To 'wide     'eword-decode-cr)
 
 ;;source http://d.hatena.ne.jp/sasakyh/touch/20100805/1280989327
 ;; and https://stackoverflow.com/questions/25109968/in-emacs-how-to-open-file-in-external-program-without-errors
@@ -176,10 +187,12 @@
 ;; SAMBA
 ;; --------------------------------------
 
+
 (defun extract-corp-url(url)
   "guess the correct url from malformed ones"
   (if (and url (string-match "[^0-9]+\\([0-9]+\\)+[^0-9]+\\([0-9]+\\)$\\(.+\\)" url))
-      (format corp-smb-format (match-string 1 url) (match-string 2 url) (match-string 3 url))
+      (format corp-smb-format (match-string 1 url)
+              (match-string 2 url) (match-string 3 (subst-char-in-string ?\\ ?/ url)))
     nil)
   )
 

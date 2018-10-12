@@ -296,9 +296,6 @@
 (setq-default indent-tabs-mode nil)
 
 
-
-
-
 ;; WORK RELATED
 ;; --------------------------------------
 (load "~/.emacs.d/work.el")
@@ -309,7 +306,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(ein:cell-output-area ((t (:background "LightSteelBlue1" :foreground "black"))) t)
+ '(ein:cell-output-area ((t (:background "gray40" :foreground "black"))) t) ;LightSteelBlue1
  '(erc-input-face ((t (:foreground "SeaGreen4"))))
  '(erc-my-nick-face ((t (:foreground "royal blue" :weight bold))))
  '(erc-pal-face ((t (:foreground "light pink" :weight bold))))
