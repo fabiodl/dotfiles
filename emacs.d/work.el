@@ -46,6 +46,7 @@
 (defun update-schedule()
   """update schedule using caldav calendar
       the default diary file should have a #include \"~/remote-diary\""""
+      (interactive)
       (update-calendar-from-url
        (concat "http://localhost:1080/users/" corp-mail "/calendar/")
        "~/remote-diary")

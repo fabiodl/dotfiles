@@ -184,7 +184,10 @@
 
 (add-hook 'diary-list-entries-hook 'diary-include-other-diary-files)
 (add-hook 'diary-mark-entries-hook 'diary-mark-included-diary-files)
+(add-hook 'diary-list-entries-hook 'diary-sort-entries t)
+(setq calendar-mark-diary-entries-flag t)
 
+ 
 (require 'appt)
 (require 'notifications)
 (defun my-appt-display (time-to-event curr-time message)
@@ -192,7 +195,7 @@
                        :body (format "In %s minutes" time-to-event)
                        :app-name "Emacs: Org"
                        :sound-name "alarm-clock-elapsed"
-                       :timeout (if (string= "0" time-to-event) 0 -1)
+                       :timeout (if (string= "0" time-to-event)  1800000 -1)
                       )
   (appt-disp-window time-to-event curr-time message)
  )
