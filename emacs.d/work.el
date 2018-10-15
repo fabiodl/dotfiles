@@ -128,7 +128,7 @@
       wl-smtp-posting-server "localhost"
       wl-local-domain "localhost"
       wl-message-id-domain "localhost")
-
+;;http://emacs-fu.blogspot.com/2009/06/e-mail-with-wanderlust.html
 (setq wl-from corp-mail-from
       wl-trash-folder   "%Trash"
       wl-message-buffer-prefetch-threshold nil
@@ -141,6 +141,8 @@
                                       "^Subject:"
                                       "^Date:")
       wl-summary-auto-refile-skip-marks nil ;to auto-refile unread messages
+      wl-fcc-force-as-read t               ;; mark sent messages as read
+      wl-fcc "%sent"                       ;; sent msgs go to the "sent"-folder
 
       )
 
@@ -151,11 +153,18 @@
 "eword-decode-and-unfold-unstructured-field-body w\ carriage returns"
 (string-join (split-string (eword-decode-and-unfold-unstructured-field-body s) ",") ",\n"))
 
+(defun eword-decode-date(time &rest args)
+  "date formatter"
+  (format-time-string "%a %F %T" (date-to-time time)))
+
+
 (mime-set-field-decoder
  'From nil 'eword-decode-and-unfold-structured-field-body)
 (mime-set-field-decoder
  'To 'wide     'eword-decode-cr)
-
+(mime-set-field-decoder
+ 'Date 'wide 'eword-decode-date)
+ 
 ;;source http://d.hatena.ne.jp/sasakyh/touch/20100805/1280989327
 ;; and https://stackoverflow.com/questions/25109968/in-emacs-how-to-open-file-in-external-program-without-errors
 (defvar my-mime-preview-play-current-entity-appname "fiber"
