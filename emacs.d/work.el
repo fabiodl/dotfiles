@@ -142,7 +142,7 @@
                                       "^Date:")
       wl-summary-auto-refile-skip-marks nil ;to auto-refile unread messages
       wl-fcc-force-as-read t               ;; mark sent messages as read
-      wl-fcc "%sent"                       ;; sent msgs go to the "sent"-folder
+      wl-fcc "%Sent"                       ;; sent msgs go to the "sent"-folder
 
       )
 
@@ -151,7 +151,9 @@
 
 (defun eword-decode-cr (s &optional start-column max-column)
 "eword-decode-and-unfold-unstructured-field-body w\ carriage returns"
-(string-join (split-string (eword-decode-and-unfold-unstructured-field-body s) ",") ",\n"))
+(let ((l))
+  (setq l (split-string (eword-decode-and-unfold-unstructured-field-body s) ","))
+  (format "[%d] %s" (length l) (string-join l ",\n"))))
 
 (defun eword-decode-date(time &rest args)
   "date formatter"

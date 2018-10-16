@@ -249,7 +249,9 @@
   (when (file-exists-p fname)
     (load-file fname)))
 
+
 (load-file-when-existing "~/.emacs.d/erc-settings.el")
+(setq erc-auto-query 'bury) ;prevent queries from opening new windows
 
 (mapcar #'(lambda(pair) (assign-key-to-buffer-toggle (car pair) (cadr pair) )) fast-toggle-buffers)  
 (global-set-key (kbd "<f9>") (lambda() (interactive) (closeall-fast-close-buffers)))
