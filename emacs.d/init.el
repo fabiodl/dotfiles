@@ -52,6 +52,7 @@
 ;;these hooks are for server mode and standalone mode, respectively
 (add-hook 'after-make-frame-functions 'set-new-frame-colors)
 (add-hook 'window-setup-hook '(lambda() (set-new-frame-colors (selected-frame))))
+(set-new-frame-colors (selected-frame))
 
 ;(global-linum-mode t) ; enable line numbers globally
 (add-hook 'prog-mode-hook 'linum-mode)
@@ -81,8 +82,10 @@
 
 (elpy-enable)
 ;(elpy-use-ipython)
-(setq python-shell-interpreter "ipython"
-    python-shell-interpreter-args "--simple-prompt -i")
+(setq python-shell-interpreter "ipython3"
+      python-shell-interpreter-args "--simple-prompt -i"
+      elpy-shell-echo-input nil
+      elpy-shell-display-buffer-after-send t)
 
 ;; use flycheck not flymake with elpy
 (when (require 'flycheck nil t)
@@ -195,6 +198,7 @@
                        :body (format "In %s minutes" time-to-event)
                        :app-name "Emacs: Org"
                        :sound-name "alarm-clock-elapsed"
+                       :transient t
                        :timeout (if (string= "0" time-to-event)  1800000 -1)
                       )
   (appt-disp-window time-to-event curr-time message)
@@ -249,14 +253,60 @@
   (when (file-exists-p fname)
     (load-file fname)))
 
-
 (load-file-when-existing "~/.emacs.d/erc-settings.el")
-(setq erc-auto-query 'bury) ;prevent queries from opening new windows
+;;snippets from http://home.thep.lu.se/~karlf/emacs.html
+
+(defun erc-ignore-unimportant (msg)
+  (if (or (string-match "*** localhost has changed mode for &bitlbee to" msg)
+          (string-match "<root> discord - Remote host is closing websocket connection" msg)
+          (string-match "<root> discord - Performing soft-reconnect" msg)
+          (string-match "Account already online" msg))
+      (setq erc-insert-this nil)))
+(add-hook 'erc-insert-pre-hook 'erc-ignore-unimportant)
+
+(setq erc-auto-query 'bury ;prevent queries from opening new windows
+      erc-server-flood-penalty 0
+      erc-track-exclude-types '("JOIN" "NICK" "PART" "QUIT" "MODE"
+                                "324" "329" "332" "333" "353" "477")
+      erc-track-exclude '("&bitlbee" "localhost:6667")
+      erc-accidental-paste-threshold-seconds nil
+      erc-warn-about-blank-lines nil
+      ) 
+
+(require 'ercn)
+(setq ercn-notify-rules '((query-buffer . all)
+                          (message . ("#general"))
+                          ))
+
+(defun dbus-erc-notify (nickname message)
+ ""
+ (notifications-notify :title "erc"
+                       :transient t
+                       :body (substring nickname 0 1)
+                       :timeout 5000
+                      ))
+(add-hook 'ercn-notify-hook 'dbus-erc-notify)
 
 (mapcar #'(lambda(pair) (assign-key-to-buffer-toggle (car pair) (cadr pair) )) fast-toggle-buffers)  
 (global-set-key (kbd "<f9>") (lambda() (interactive) (closeall-fast-close-buffers)))
 
 
+;;EWW
+(require 'eww)
+(defun my/eww-toggle-images ()
+  "Toggle whether images are loaded and reload the current page fro cache."
+  (interactive)
+  (setq-local shr-inhibit-images (not shr-inhibit-images))
+  (eww-reload t)
+  (message "Images are now %s"
+           (if shr-inhibit-images "off" "on")))
+
+(define-key eww-mode-map (kbd "I") #'my/eww-toggle-images)
+(define-key eww-link-keymap (kbd "I") #'my/eww-toggle-images)
+
+;; minimal rendering by default
+(setq-default shr-inhibit-images t)   ; toggle with `I`
+(setq-default shr-use-fonts nil)      ; toggle with `F`
 
 
 ;; CODING
@@ -311,7 +361,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(ein:cell-output-area ((t (:background "gray40" :foreground "black"))) t) ;LightSteelBlue1
+ '(ein:cell-output-area ((t (:background "gray40" :foreground "black"))) t)
  '(erc-input-face ((t (:foreground "SeaGreen4"))))
  '(erc-my-nick-face ((t (:foreground "royal blue" :weight bold))))
  '(erc-pal-face ((t (:foreground "light pink" :weight bold))))

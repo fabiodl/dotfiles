@@ -142,7 +142,7 @@
                                       "^Date:")
       wl-summary-auto-refile-skip-marks nil ;to auto-refile unread messages
       wl-fcc-force-as-read t               ;; mark sent messages as read
-      wl-fcc "%Sent"                       ;; sent msgs go to the "sent"-folder
+      ;wl-fcc "%Sent"                       ;; sent msgs go to the "sent"-folder
 
       )
 
@@ -157,8 +157,9 @@
 
 (defun eword-decode-date(time &rest args)
   "date formatter"
-  (format-time-string "%a %F %T" (date-to-time time)))
+  (format-time-string "%a, %d %b %Y %T" (date-to-time time)))
 
+(setq wl-default-draft-cite-date-format-string nil )
 
 (mime-set-field-decoder
  'From nil 'eword-decode-and-unfold-structured-field-body)
