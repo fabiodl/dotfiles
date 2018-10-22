@@ -216,7 +216,8 @@
     (when (fboundp 'w3m-anchor) (setq url (extract-corp-url (w3m-anchor))))    ;first try if it's a mime part
     (unless url                                                                ;if not, search the yank buffer
       (let ((yankurl))
-        (setq yankurl (buffer-substring-no-properties (region-beginning) (region-end)))
+        (setq yankurl (replace-regexp-in-string "\n" "" (buffer-substring-no-properties (region-beginning) (region-end))))
+        (message (format "Yank URL %s" yankurl))
         (setq url (extract-corp-url yankurl))                                 ;if the yank buffer seems legit ok
         (unless url (setq url (format corp-smb-format "XX" "XX" yankurl) ))));otherwise give an example            
     (setq url (read-from-minibuffer "Filename: " url))                        ;confirm the url
