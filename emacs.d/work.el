@@ -195,7 +195,37 @@
       (mime-write-entity-content entity filename)      
       (let ((process-connection-type nil)) (start-process "" nil my-mime-preview-play-current-entity-appname filename))  
       )))
-    
+
+
+
+
+;; Wanderlust automatically read folders
+;;from https://gist.github.com/bitonic/2972603
+(defvar wl-auto-read-folders nil
+  "WL folders that will be marked automatically as read when syncing")
+
+(defun wl-folder-auto-read-execute (entity-name entity)
+  (when (member entity-name wl-auto-read-folders)
+    (wl-folder-mark-as-read-all-entity entity)
+    t))
+
+(defun wl-folder-auto-read-check (entity)
+  (cond ((consp entity)
+         (unless (wl-folder-auto-read-execute (car entity) entity)
+           (mapc (lambda (entity-1)
+                   (wl-folder-auto-read-check entity-1))
+                 (nth 2 entity))))
+        ((stringp entity)
+         (wl-folder-auto-read-execute entity entity))
+        (t (error "Invalid entity"))))
+
+(defadvice wl-folder-check-entity (after wl-folder-auto-read
+                                         (entity &optional auto))
+  (when wl-auto-read-folders
+    (wl-folder-auto-read-check entity)))
+
+(ad-activate 'wl-folder-check-entity)
+
 
 ;; SAMBA
 ;; --------------------------------------
