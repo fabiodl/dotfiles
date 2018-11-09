@@ -5,8 +5,16 @@
 
 (require 'package)
 
-(add-to-list 'package-archives
-             '("melpa" . "http://melpa.org/packages/") t)
+(setq package-archives
+      '(("GNU ELPA"     . "https://elpa.gnu.org/packages/")
+        ("MELPA Stable" . "https://stable.melpa.org/packages/")
+        ("MELPA"        . "https://melpa.org/packages/"))
+      package-archive-priorities
+      '(("MELPA Stable" . 10)
+        ("GNU ELPA"     . 5)
+        ("MELPA"        . 0)))
+
+
 
 (package-initialize)
 (when (not package-archive-contents)
@@ -27,6 +35,7 @@
     haskell-mode
     mwim
     google-translate
+    ercn
 ))
 
 (defun install-missing-packages (package-list)
@@ -83,8 +92,10 @@
 (elpy-enable)
 ;(elpy-use-ipython)
 (setq python-shell-interpreter "ipython3"
+      elpy-rpc-python-command "python3"
       python-shell-interpreter-args "--simple-prompt -i"
       elpy-shell-echo-input nil
+      elpy-shell-use-project-root nil ; this makes C-c C-c run in the current dir
       elpy-shell-display-buffer-after-send t)
 
 ;; use flycheck not flymake with elpy
@@ -108,8 +119,8 @@
 (set-face-attribute 'flycheck-warning nil :underline nil)
 (setq flycheck-highlighting-mode 'lines)
 
-;;fix ein authentication bug
-;(advice-add 'request--netscape-cookie-parse :around #'fix-request-netscape-cookie-parse)
+;fix ein authentication bug
+(advice-add 'request--netscape-cookie-parse :around #'fix-request-netscape-cookie-parse)
 
 ;;make transparent figures visible
 (defadvice ein:insert-image (around ein-transparent-color-replacement activate)
@@ -384,4 +395,4 @@
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (wanderlust w3m tangotango-theme py-autopep8 mwim mozc magit jedi japanese-holidays haskell-mode google-translate flycheck-pyflakes ercn elpy ein better-defaults))))
+    (japanese-holidays wanderlust w3m ercn google-translate mwim haskell-mode magit jedi mozc flycheck-pyflakes py-autopep8 tangotango-theme flycheck elpy ein better-defaults))))
