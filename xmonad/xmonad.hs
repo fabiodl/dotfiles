@@ -41,7 +41,7 @@ import XMonad.Actions.CycleWS
 import XMonad.Actions.Navigation2D
 import XMonad.Actions.SinkAll
 import XMonad.Actions.WindowBringer
-
+import XMonad.Actions.PhysicalScreens  (getScreen,PhysicalScreen)
   
 import XMonad.Prompt
 import XMonad.Prompt.Window
@@ -167,6 +167,10 @@ scratchTerminal = "urxvt"
 scratchpadSpawnProgram prog winName =  namedScratchpadAction [NS winName prog (resource =? winName) nonFloating] winName
 scratchpadSpawnTerminalProgram prog winName = scratchpadSpawnProgram (scratchTerminal++" -name "++winName++" -e "++prog) winName
 
+
+screenWorkspace':: Maybe ScreenId -> X(Maybe WorkspaceId)
+screenWorkspace' (Just x) = screenWorkspace x
+screenWorkspace' Nothing = return Nothing
   
 myKeys=
  [ ((myModKey .|. shiftMask .|. controlMask, xK_q), io exitSuccess)
@@ -198,7 +202,7 @@ myKeys=
   where wsCombiner act ctx = ctx (windows . act) >> printWs 
         wsActions = [(shiftMask, W.shift), (mod1Mask, W.greedyView), (controlMask,shiftAndGo)] :: [(KeyMask,WsAction)]
         withPlainWs =  zip [xK_1 .. xK_9]  $ map (\ws ac -> ac ws)   myWorkspaces :: [(KeySym, WithWsType)] 
-        withPhysicalWs = zip [xK_w, xK_e, xK_r] $ map (\sc ac -> screenWorkspace sc >>= flip whenJust ac) [0..] :: [(KeySym, WithWsType)] 
+        withPhysicalWs = zip [xK_w, xK_e, xK_r] $ map (\sc ac -> getScreen def sc >>= screenWorkspace' >>= flip whenJust ac) [0..] :: [(KeySym, WithWsType)] 
         withHiddenWs = [(key, doTo dir (WSIs $ myHiddenWS wsType) order) |
                            (key,dir,wsType,order) <- [ (xK_0,Next,EmptyWS,getSortByIndex)
                                                  , (xK_minus,Prev,NonEmptyWS,getSortByIndex)
