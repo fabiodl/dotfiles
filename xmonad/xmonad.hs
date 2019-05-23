@@ -182,7 +182,7 @@ myKeys=
  , ((myModKey                , xK_f), floatWindow)
  , ((myModKey                , xK_v), quickPrompt layoutOptions)
  , ((myModKey .|. shiftMask  , xK_BackSpace), scratchpadSpawnActionTerminal scratchTerminal) 
- , ((myModKey                , xK_BackSpace), scratchpadSpawnTerminalProgram "ipython" "ipython" ) 
+ , ((myModKey                , xK_BackSpace), scratchpadSpawnTerminalProgram "/home/fabio/pyenv/bin/ipython" "ipython") 
  , ((myModKey .|. controlMask, xK_BackSpace), spawn "gnome-screensaver-command -l")
  , ((myModKey                , xK_F5), scratchpadSpawnProgram "slack" "slack") 
  , ((myModKey                , xK_F9), scratchpadSpawnProgram "firefox" "Navigator") 

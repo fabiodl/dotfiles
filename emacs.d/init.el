@@ -142,6 +142,9 @@
 (setq default-input-method "japanese-mozc")
 (prefer-coding-system 'utf-8)
 (global-set-key (kbd "<zenkaku-hankaku>") 'toggle-input-method)
+(load-file "~/.emacs.d/mozc-isearch.el")
+
+
 
 (require 'google-translate)
 (require 'google-translate-smooth-ui)
@@ -393,6 +396,17 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(notmuch-saved-searches
+   (quote
+    ((:name "inbox" :query "tag:inbox" :key "i" :search-type tree)
+     (:name "unread" :query "tag:unread" :key "u" :search-type tree)
+     (:name "flagged" :query "tag:flagged" :key "f" :search-type tree)
+     (:name "sent" :query "tag:sent" :key "t" :search-type tree)
+     (:name "drafts" :query "tag:draft" :key "d" :search-type tree)
+     (:name "all mail" :query "*" :key "a" :search-type tree))))
  '(package-selected-packages
    (quote
-    (japanese-holidays wanderlust w3m ercn google-translate mwim haskell-mode magit jedi mozc flycheck-pyflakes py-autopep8 tangotango-theme flycheck elpy ein better-defaults))))
+    (mozc-im japanese-holidays w3m ercn google-translate mwim haskell-mode magit jedi mozc flycheck-pyflakes py-autopep8 tangotango-theme flycheck elpy ein better-defaults)))
+ '(send-mail-function (quote smtpmail-send-it))
+ '(smtpmail-smtp-server "localhost")
+ '(smtpmail-smtp-service 1025))
