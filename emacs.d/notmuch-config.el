@@ -23,11 +23,24 @@
                                   wl-refile-rule-alist)))))
 
 
-(defun get-notmuch-tag-rules()
+(defun get-notmuch-local-tag-rules()
   ""
   (concat (string-join  (wl-convert-to-notmuch-tags) "\n" )
                         "\n"
                         (read-file-contents "~/.emacs.d/.notmuchextratags")))
+
+(defun get-notmuch-tags ()
+  ""
+  (mapcar (lambda(x) (substring x 1)) (delete-dups (seq-filter (lambda (x) (string= (substring x 0 1) "+"))   (split-string (get-notmuch-local-tag-rules))))))
+
+
+
+
+(defun get-notmuch-tag-rules()
+  ""
+  (concat (get-notmuch-local-tag-rules)
+          "\n"
+          (string-join (mapcar (lambda(x) (concat "-inbox +" x " folder:" x " AND NOT tag:"x )) (get-notmuch-tags)) "\n")))
 
 
 (defun read-file-contents (fname)
@@ -38,31 +51,28 @@
       (buffer-string))))
 
 
-(defun get-notmuch-tags ()
-  ""
-  (mapcar (lambda(x) (substring x 1)) (delete-dups (seq-filter (lambda (x) (string= (substring x 0 1) "+"))   (split-string (get-notmuch-tag-rules))))))
-
 
 (defun get-afew-mailmover-rules ()
   ""
-  (let* ((tags (get-notmuch-tags))
+  (let* ((manualtags '("flagged"))
+         (tags (append (get-notmuch-tags) manualtags))
          (inboxtag "inbox"))
     (concat "[MailMover]\n"
             "folders = INBOX \n"
             "\n"
             "#rules\n"
             "INBOX = "
-            (string-join (mapcar (lambda(x) (concat "'tag:" x " AND NOT tag:" inboxtag "':" x " ")) tags)) " "
+            (string-join (mapcar (lambda(x) (concat "'tag:" x " AND NOT tag:" inboxtag "':" (s-replace "/" "." x) " ")) tags)) " "
             "'" (string-join (mapcar (lambda(x) (concat "NOT tag:" x)) tags) " AND ") " AND NOT tag:" inboxtag
             "':archive\n")))
 
-(defun export-notmuch-tag-rules()
+(defun notmuch-export-tag-rules()
   ""
   (interactive)
   (write-region (get-notmuch-tag-rules) nil "~/.notmuchtags"))
 
 
-(defun export-afew-mailmover-rules()
+(defun afew-export-mailmover-rules()
   ""
   (interactive)
   (write-region (get-afew-mailmover-rules) nil "~/.config/afew/config"))
@@ -84,3 +94,8 @@
     (display-buffer "*offlineimap*"))
 
 
+(define-key notmuch-show-mode-map ".c"
+  (lambda ()
+    "Delete current message and advance to next message."
+    (interactive)
+    (notmuch-show-apply-to-current-part-handle (lambda(handle) (mm-pipe-part handle "~/pyenv/bin/python ~/.emacs.d/parsevcal.py")))))

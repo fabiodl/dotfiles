@@ -404,6 +404,22 @@
      (:name "sent" :query "tag:sent" :key "t" :search-type tree)
      (:name "drafts" :query "tag:draft" :key "d" :search-type tree)
      (:name "all mail" :query "*" :key "a" :search-type tree))))
+ '(notmuch-tag-formats
+   (quote
+    (("unread"
+      (propertize tag
+                  (quote face)
+                  (quote notmuch-tag-unread)))
+     ("flagged"
+      (notmuch-tag-format-image-data tag
+                                     (notmuch-tag-star-icon))
+      (propertize tag
+                  (quote face)
+                  (quote notmuch-tag-flagged)))
+     ("amro/toConfirm"
+      (notmuch-apply-face tag
+                          (quote
+                           (:foreground "magenta")))))))
  '(package-selected-packages
    (quote
     (mozc-im japanese-holidays w3m ercn google-translate mwim haskell-mode magit jedi mozc flycheck-pyflakes py-autopep8 tangotango-theme flycheck elpy ein better-defaults)))
