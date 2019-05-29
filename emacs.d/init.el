@@ -396,12 +396,13 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(notmuch-hello-auto-refresh t)
  '(notmuch-saved-searches
    (quote
     ((:name "inbox" :query "tag:inbox" :key "i" :search-type tree)
      (:name "unread" :query "tag:unread" :key "u" :search-type tree)
      (:name "flagged" :query "tag:flagged" :key "f" :search-type tree)
-     (:name "sent" :query "tag:sent" :key "t" :search-type tree)
+     (:name "sent" :query "tag:Sent" :key "t" :search-type tree)
      (:name "drafts" :query "tag:draft" :key "d" :search-type tree)
      (:name "all mail" :query "*" :key "a" :search-type tree))))
  '(notmuch-tag-formats
