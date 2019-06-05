@@ -38,9 +38,10 @@
 
 (defun get-notmuch-tag-rules()
   ""
-  (concat (get-notmuch-local-tag-rules)
+  (concat (string-join (mapcar (lambda(x) (concat "-inbox +" x " folder:" (s-replace "/" "." x) " AND NOT tag:"x )) (get-notmuch-tags)) "\n")
           "\n"
-          (string-join (mapcar (lambda(x) (concat "-inbox +" x " folder:" x " AND NOT tag:"x )) (get-notmuch-tags)) "\n")))
+          (get-notmuch-local-tag-rules)
+          ))
 
 
 (defun read-file-contents (fname)
