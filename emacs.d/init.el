@@ -153,6 +153,12 @@
       google-translate-show-phonetic t
       )
 
+(defun google-translate--get-b-d1 ()
+    ;; TKK='427110.1469889687'
+  (list 427110 1469889687))
+
+
+
 (add-to-list 'face-ignored-fonts "Noto Serif CJK")
 (add-to-list 'face-ignored-fonts "Noto Sans CJK")
 
