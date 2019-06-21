@@ -201,6 +201,14 @@
 (add-hook 'post-command-hook 'hcz-set-cursor-color-according-to-mode)
 (add-hook 'focus-in-hook '(lambda() (set-cursor-color (get-my-cursor-color))))
 
+
+;; TITLE
+;; --------------------------------------
+
+(setq frame-title-format '(multiple-frames "emacs %b"
+                 ("" invocation-name "@" system-name)))
+
+
 ;; DIARY
 ;; --------------------------------------
 
