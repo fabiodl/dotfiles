@@ -306,7 +306,7 @@ main = do
     xmonad $ docks $ withUrgencyHook NoUrgencyHook
            $ withNavigation2DConfig def
            $ ewmh gnomeConfig           
-           { logHook = clockColor >>= (\col -> dynamicLogWithPP (pangoPP dbus col) <+> (setBorderColor col)) -- <+> fadeHook
+           { logHook = clockColor >>= (\col -> dynamicLogWithPP (pangoPP dbus col) <+> (Main.setBorderColor col)) -- <+> fadeHook
          , mouseBindings = myMouseBindings
          , layoutHook = avoidStruts $ smartBorders  (  myTiledLayout ||| myDoubleLayout ||| myTabbedLayout ||| Full )
          , normalBorderColor   =  myBgColor

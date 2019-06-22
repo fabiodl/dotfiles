@@ -1,6 +1,7 @@
 (defvar corp-packages
   '(w3m
-    ;wanderlust
+   ;wanderlust
+   ;notmuch
     japanese-holidays)
   )
 
@@ -66,7 +67,7 @@
 
 (load-file-when-existing refile-rules-filename) ;sets wl-refile-rule-alist
 (load-file-when-existing "~/.emacs.d/notmuch-settings.el")
-(require 'notmuch)
+(require 'notmuch nil 'noerror) ;this makes notmuch optional
 
 ;; SAMBA
 ;; --------------------------------------
