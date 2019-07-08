@@ -149,7 +149,7 @@
 (require 'google-translate)
 (require 'google-translate-smooth-ui)
 (global-set-key "\C-ct" 'google-translate-smooth-translate)
-(setq google-translate-translation-directions-alist '(("ja" . "en")("en" . "ja"))
+(setq google-translate-translation-directions-alist '(("ja" . "en")("en" . "ja")) ;you can reverse by C-n C-p
       google-translate-show-phonetic t
       )
 
