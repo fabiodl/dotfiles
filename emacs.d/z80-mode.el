@@ -47,6 +47,8 @@
   (setq-local tab-stop-list '(2 4 6))
   (setq-local tab-width 2)
   (setq-local indent-line-function 'insert-tab)
+  (setq-local comment-start "; ")
+  (setq-local comment-end "")
   )
 
 

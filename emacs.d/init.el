@@ -218,16 +218,18 @@
 (add-hook 'diary-list-entries-hook 'diary-sort-entries t)
 (setq calendar-mark-diary-entries-flag t)
 
+(defun optConcat (x)
+  (if (listp x) (string-join x ", ") x))
  
 (require 'appt)
 (require 'notifications)
 (defun my-appt-display (time-to-event curr-time message)
- (notifications-notify :title message
-                       :body (format "In %s minutes" time-to-event)
+  (notifications-notify :title (optConcat message)
+                       :body (format "In %s minutes" (optConcat time-to-event))
                        :app-name "Emacs: Org"
                        :sound-name "alarm-clock-elapsed"
                        :transient t
-                       :timeout (if (string= "0" time-to-event)  1800000 -1)
+                       :timeout (if (string= "0" (optConcat time-to-event))  1800000 -1)
                       )
   (appt-disp-window time-to-event curr-time message)
  )
@@ -437,7 +439,7 @@
                            (:foreground "magenta")))))))
  '(package-selected-packages
    (quote
-    (mozc-im japanese-holidays w3m ercn google-translate mwim haskell-mode magit jedi mozc flycheck-pyflakes py-autopep8 tangotango-theme flycheck elpy ein better-defaults)))
+    (gnu-elpa-keyring-update realgud mozc-im japanese-holidays w3m ercn google-translate mwim haskell-mode magit jedi mozc flycheck-pyflakes py-autopep8 tangotango-theme flycheck elpy ein better-defaults)))
  '(send-mail-function (quote smtpmail-send-it))
  '(smtpmail-smtp-server "localhost")
  '(smtpmail-smtp-service 1025))
