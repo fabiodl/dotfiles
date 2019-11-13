@@ -189,7 +189,9 @@ myKeys=
  , ((myModKey                , xK_BackSpace), scratchpadSpawnTerminalProgram "/home/fabio/pyenv/bin/ipython" "ipython") 
  , ((myModKey .|. controlMask, xK_BackSpace), spawn "gnome-screensaver-command -l")
  , ((myModKey                , xK_F5), scratchpadSpawnProgram "slack" "slack") 
- , ((myModKey                , xK_F9), scratchpadSpawnProgram "firefox" "Navigator") 
+ , ((myModKey                , xK_F9), scratchpadSpawnProgram "firefox" "Navigator")
+ , ((myModKey .|. shiftMask  , xK_h), sendMessage Shrink) -- %! Expand the master area
+ , ((myModKey .|. shiftMask  , xK_l), sendMessage Expand) -- %! Expand the master area
  ]
  ++
  myMouseKeys
