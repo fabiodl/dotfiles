@@ -63,12 +63,14 @@
 (add-hook 'window-setup-hook '(lambda() (set-new-frame-colors (selected-frame))))
 (set-new-frame-colors (selected-frame))
 
+
 ;(global-linum-mode t) ; enable line numbers globally
 (add-hook 'prog-mode-hook 'linum-mode)
 
 (setq column-number-mode t) ;column number
 
 (setq mouse-autoselect-window t)  ;sloppy focus
+
 
 ;;server
 (require 'server)
@@ -156,6 +158,18 @@
 (defun google-translate--get-b-d1 ()
     ;; TKK='427110.1469889687'
   (list 427110 1469889687))
+
+
+;from https://github.com/atykhonov/google-translate/issues/98#issuecomment-562870854
+ (defun google-translate-json-suggestion (json)
+  "Retrieve from JSON (which returns by the
+`google-translate-request' function) suggestion. This function
+does matter when translating misspelled word. So instead of
+translation it is possible to get suggestion."
+  (let ((info (aref json 7)))
+    (if (and info (> (length info) 0))
+        (aref info 1)
+      nil)))                       
 
 
 
@@ -439,7 +453,7 @@
                            (:foreground "magenta")))))))
  '(package-selected-packages
    (quote
-    (gnu-elpa-keyring-update realgud mozc-im japanese-holidays w3m ercn google-translate mwim haskell-mode magit jedi mozc flycheck-pyflakes py-autopep8 tangotango-theme flycheck elpy ein better-defaults)))
+    (auctex anki-connect gnu-elpa-keyring-update realgud mozc-im japanese-holidays w3m ercn google-translate mwim haskell-mode magit jedi mozc flycheck-pyflakes py-autopep8 tangotango-theme flycheck elpy ein better-defaults)))
  '(send-mail-function (quote smtpmail-send-it))
  '(smtpmail-smtp-server "localhost")
  '(smtpmail-smtp-service 1025))

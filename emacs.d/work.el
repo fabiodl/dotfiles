@@ -69,6 +69,18 @@
 (load-file-when-existing "~/.emacs.d/notmuch-settings.el")
 (require 'notmuch nil 'noerror) ;this makes notmuch optional
 
+(defun my-confirm-sending ()
+  "Allow user to quit when current message subject is empty."
+  (let ((ccs (message-field-value "Cc")))
+    (or (yes-or-no-p (concatenate 'string "Send mail to "
+                                  (message-field-value "To")
+                                  (unless (null ccs) (concatenate 'string " cc:" ccs))
+                                  "?"))
+      (keyboard-quit))))
+
+
+(add-hook 'notmuch-mua-send-hook #'my-confirm-sending)
+
 ;; SAMBA
 ;; --------------------------------------
 
