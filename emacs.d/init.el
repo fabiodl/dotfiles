@@ -110,7 +110,13 @@
 (add-hook 'elpy-mode-hook 'py-autopep8-enable-on-save)
 
 (setq ein:use-auto-complete t)
+(setq ein:completion-backend 'ein:use-ac-jedi-backend)
+(add-hook 'ein:notebook-mode-hook 'ein:remove-movecell-keybindings)
 
+(defun ein:remove-movecell-keybindings ()
+  (progn (define-key ein:notebook-mode-map (kbd "C-c <up>") nil)
+         (define-key ein:notebook-mode-map (kbd "C-c <down>") nil)
+         ))
 (global-auto-complete-mode t)
 
 (add-hook 'python-mode-hook 'jedi:setup)
