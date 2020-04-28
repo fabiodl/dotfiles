@@ -192,6 +192,7 @@ myKeys=
  , ((myModKey                , xK_F9), scratchpadSpawnProgram "firefox" "Navigator")
  , ((myModKey .|. shiftMask  , xK_h), sendMessage Shrink) -- %! Expand the master area
  , ((myModKey .|. shiftMask  , xK_l), sendMessage Expand) -- %! Expand the master area
+ , ((myModKey .|. controlMask, xK_Return), spawn "xfce4-terminal")
  ]
  ++
  myMouseKeys
