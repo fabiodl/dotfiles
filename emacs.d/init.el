@@ -437,7 +437,7 @@
                            (:foreground "magenta")))))))
  '(package-selected-packages
    (quote
-    (mozc-im japanese-holidays w3m ercn google-translate mwim haskell-mode magit jedi mozc flycheck-pyflakes py-autopep8 tangotango-theme flycheck elpy ein better-defaults)))
+    (php-mode mpdel mozc-im japanese-holidays w3m ercn google-translate mwim haskell-mode magit jedi mozc flycheck-pyflakes py-autopep8 tangotango-theme flycheck elpy ein better-defaults)))
  '(send-mail-function (quote smtpmail-send-it))
  '(smtpmail-smtp-server "localhost")
  '(smtpmail-smtp-service 1025))
