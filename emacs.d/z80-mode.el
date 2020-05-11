@@ -47,6 +47,8 @@
   (setq-local tab-stop-list '(2 4 6))
   (setq-local tab-width 2)
   (setq-local indent-line-function 'insert-tab)
+  (setq-local comment-start "; ")
+  (setq-local comment-end "")
   )
 
 
@@ -59,7 +61,7 @@
   (set (make-local-variable 'font-lock-defaults) '(z80-font-lock-keywords))
   (setq major-mode 'z80-mode)
   (setq mode-name "Z80")
- ; (add-hook 'z80-mode-hook 'settab)
+  (linum-mode 1)
   (run-hooks 'z80-mode-hook))
 
 (provide 'z80-mode)

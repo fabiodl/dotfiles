@@ -69,6 +69,18 @@
 (load-file-when-existing "~/.emacs.d/notmuch-settings.el")
 (require 'notmuch nil 'noerror) ;this makes notmuch optional
 
+(defun my-confirm-sending ()
+  "Allow user to quit when current message subject is empty."
+  (let ((ccs (message-field-value "Cc")))
+    (or (yes-or-no-p (concatenate 'string "Send mail to "
+                                  (message-field-value "To")
+                                  (unless (null ccs) (concatenate 'string " cc:" ccs))
+                                  "?"))
+      (keyboard-quit))))
+
+
+(add-hook 'notmuch-mua-send-hook #'my-confirm-sending)
+
 ;; SAMBA
 ;; --------------------------------------
 
@@ -81,22 +93,23 @@
     nil)
   )
 
-(defun open-nautilus-samba()
+(defun open-nautilus-samba(extract)
   "open the link from w3m-anchor (if available) or yank buffer"
   (interactive)
   (let ((url nil))
     (when (fboundp 'w3m-anchor) (setq url (extract-corp-url (w3m-anchor))))    ;first try if it's a mime part
     (unless url                                                                ;if not, search the yank buffer
       (let ((yankurl))
-        (setq yankurl (replace-regexp-in-string "\n" "" (buffer-substring-no-properties (region-beginning) (region-end))))
-        (setq url (extract-corp-url yankurl))                                 ;if the yank buffer seems legit ok
+        (setq yankurl (replace-regexp-in-string "\n" "" (buffer-substring-no-properties (region-beginning) (region-end))))        
+        (setq url (if extract (extract-corp-url yankurl) yankurl))           ;if the yank buffer seems legit ok
         (unless url (setq url (format corp-smb-format "XX" "XX" yankurl) ))));otherwise give an example            
     (setq url (read-from-minibuffer "Filename: " url))                        ;confirm the url
     (setq url (concat "smb://" corp-domain ";" corp-username "@" (subst-char-in-string ?\\ ?/ url)))
     (message "Opening %s" url)
     (let ((process-connection-type nil)) (start-process "" nil "nautilus" url))))
     
-(global-set-key "\C-cn" 'open-nautilus-samba)
+(global-set-key "\C-cn" (lambda () (interactive) (open-nautilus-samba nil)))
+(global-set-key "\C-cN" (lambda () (interactive) (open-nautilus-samba t)))
 
 (defun open-url-with-xdg()
   "open url with xdg-open"
@@ -115,3 +128,4 @@
   (read-only-mode +1)
   )
 (global-set-key "\C-cj" 'buffer-as-jis)
+(setq mail-host-address "mail-host-address.com")

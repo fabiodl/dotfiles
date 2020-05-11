@@ -63,12 +63,14 @@
 (add-hook 'window-setup-hook '(lambda() (set-new-frame-colors (selected-frame))))
 (set-new-frame-colors (selected-frame))
 
+
 ;(global-linum-mode t) ; enable line numbers globally
 (add-hook 'prog-mode-hook 'linum-mode)
 
 (setq column-number-mode t) ;column number
 
 (setq mouse-autoselect-window t)  ;sloppy focus
+
 
 ;;server
 (require 'server)
@@ -108,7 +110,13 @@
 (add-hook 'elpy-mode-hook 'py-autopep8-enable-on-save)
 
 (setq ein:use-auto-complete t)
+(setq ein:completion-backend 'ein:use-ac-jedi-backend)
+(add-hook 'ein:notebook-mode-hook 'ein:remove-movecell-keybindings)
 
+(defun ein:remove-movecell-keybindings ()
+  (progn (define-key ein:notebook-mode-map (kbd "C-c <up>") nil)
+         (define-key ein:notebook-mode-map (kbd "C-c <down>") nil)
+         ))
 (global-auto-complete-mode t)
 
 (add-hook 'python-mode-hook 'jedi:setup)
@@ -149,13 +157,25 @@
 (require 'google-translate)
 (require 'google-translate-smooth-ui)
 (global-set-key "\C-ct" 'google-translate-smooth-translate)
-(setq google-translate-translation-directions-alist '(("ja" . "en")("en" . "ja"))
+(setq google-translate-translation-directions-alist '(("ja" . "en")("en" . "ja")) ;you can reverse by C-n C-p
       google-translate-show-phonetic t
       )
 
 (defun google-translate--get-b-d1 ()
     ;; TKK='427110.1469889687'
   (list 427110 1469889687))
+
+
+;from https://github.com/atykhonov/google-translate/issues/98#issuecomment-562870854
+ (defun google-translate-json-suggestion (json)
+  "Retrieve from JSON (which returns by the
+`google-translate-request' function) suggestion. This function
+does matter when translating misspelled word. So instead of
+translation it is possible to get suggestion."
+  (let ((info (aref json 7)))
+    (if (and info (> (length info) 0))
+        (aref info 1)
+      nil)))                       
 
 
 
@@ -218,16 +238,18 @@
 (add-hook 'diary-list-entries-hook 'diary-sort-entries t)
 (setq calendar-mark-diary-entries-flag t)
 
+(defun optConcat (x)
+  (if (listp x) (string-join x ", ") x))
  
 (require 'appt)
 (require 'notifications)
 (defun my-appt-display (time-to-event curr-time message)
- (notifications-notify :title message
-                       :body (format "In %s minutes" time-to-event)
+  (notifications-notify :title (optConcat message)
+                       :body (format "In %s minutes" (optConcat time-to-event))
                        :app-name "Emacs: Org"
                        :sound-name "alarm-clock-elapsed"
                        :transient t
-                       :timeout (if (string= "0" time-to-event)  1800000 -1)
+                       :timeout (if (string= "0" (optConcat time-to-event))  1800000 -1)
                       )
   (appt-disp-window time-to-event curr-time message)
  )
@@ -437,7 +459,7 @@
                            (:foreground "magenta")))))))
  '(package-selected-packages
    (quote
-    (php-mode mpdel mozc-im japanese-holidays w3m ercn google-translate mwim haskell-mode magit jedi mozc flycheck-pyflakes py-autopep8 tangotango-theme flycheck elpy ein better-defaults)))
+    (php-mode auctex  mozc-im japanese-holidays w3m ercn google-translate mwim haskell-mode magit jedi mozc flycheck-pyflakes py-autopep8 tangotango-theme flycheck elpy ein better-defaults)))
  '(send-mail-function (quote smtpmail-send-it))
  '(smtpmail-smtp-server "localhost")
  '(smtpmail-smtp-service 1025))

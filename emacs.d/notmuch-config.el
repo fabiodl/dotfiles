@@ -1,5 +1,5 @@
 (setq notmuch-search-oldest-first nil
-      notmuch-fcc-dirs "Sent")
+      notmuch-fcc-dirs "current/Sent")
 
 (defun flatten (LIST)
   (if LIST
@@ -38,7 +38,7 @@
 
 (defun get-notmuch-tag-rules()
   ""
-  (concat (string-join (mapcar (lambda(x) (concat "-inbox +" x " folder:" (s-replace "/" "." x) " AND NOT tag:"x )) (get-notmuch-tags)) "\n")
+  (concat (string-join (mapcar (lambda(x) (concat "-inbox +" x " folder:current/" (s-replace "/" "." x) " AND NOT tag:"x )) (get-notmuch-tags)) "\n")
           "\n"
           (get-notmuch-local-tag-rules)
           ))
@@ -59,13 +59,13 @@
          (tags (append (get-notmuch-tags) manualtags))
          (inboxtag "inbox"))
     (concat "[MailMover]\n"
-            "folders = INBOX \n"
+            "folders = current/INBOX \n"
             "\n"
             "#rules\n"
-            "INBOX = "
-            (string-join (mapcar (lambda(x) (concat "'tag:" x " AND NOT tag:" inboxtag "':" (s-replace "/" "." x) " ")) tags)) " "
+            "current/INBOX = "
+            (string-join (mapcar (lambda(x) (concat "'tag:" x " AND NOT tag:" inboxtag "':current/" (s-replace "/" "." x) " ")) tags)) " "
             "'" (string-join (mapcar (lambda(x) (concat "NOT tag:" x)) tags) " AND ") " AND NOT tag:" inboxtag
-            "':archive\n")))
+            "':current/archive\n")))
 
 (defun notmuch-export-tag-rules()
   ""
