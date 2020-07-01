@@ -1,5 +1,6 @@
 (setq notmuch-search-oldest-first nil
-      notmuch-fcc-dirs "current/Sent")
+      notmuch-fcc-dirs nil)
+     ; notmuch-fcc-dirs "current/Sent")
 
 (defun flatten (LIST)
   (if LIST
@@ -65,7 +66,7 @@
             "current/INBOX = "
             (string-join (mapcar (lambda(x) (concat "'tag:" x " AND NOT tag:" inboxtag "':current/" (s-replace "/" "." x) " ")) tags)) " "
             "'" (string-join (mapcar (lambda(x) (concat "NOT tag:" x)) tags) " AND ") " AND NOT tag:" inboxtag
-            "':current/archive\n")))
+            "':current/Archive\n")))
 
 (defun notmuch-export-tag-rules()
   ""

@@ -459,7 +459,7 @@ translation it is possible to get suggestion."
                            (:foreground "magenta")))))))
  '(package-selected-packages
    (quote
-    (auctex anki-connect gnu-elpa-keyring-update realgud mozc-im japanese-holidays w3m ercn google-translate mwim haskell-mode magit jedi mozc flycheck-pyflakes py-autopep8 tangotango-theme flycheck elpy ein better-defaults)))
+    (csv-mode auctex anki-connect gnu-elpa-keyring-update realgud mozc-im japanese-holidays w3m ercn google-translate mwim haskell-mode magit jedi mozc flycheck-pyflakes py-autopep8 tangotango-theme flycheck elpy ein better-defaults)))
  '(send-mail-function (quote smtpmail-send-it))
  '(smtpmail-smtp-server "localhost")
  '(smtpmail-smtp-service 1025))
