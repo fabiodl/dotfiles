@@ -73,7 +73,7 @@
 (setq column-number-mode t) ;column number
 
 (setq mouse-autoselect-window t)  ;sloppy focus
-
+(setq verilog-linter "verilator --lint-only")
 
 ;;server
 (require 'server)
@@ -455,8 +455,10 @@ translation it is possible to get suggestion."
       (notmuch-apply-face tag
                           '(:foreground "magenta")))))
  '(package-selected-packages
+   
    '(telega csv-mode php-mode auctex mozc-im japanese-holidays w3m ercn google-translate mwim haskell-mode magit jedi mozc flycheck-pyflakes py-autopep8 tangotango-theme flycheck elpy ein better-defaults))
  '(send-mail-function 'smtpmail-send-it)
+
  '(smtpmail-smtp-server "localhost")
  '(smtpmail-smtp-service 1025)
  '(telega-mode-line-string-format
