@@ -70,16 +70,16 @@ myMouseBindings (XConfig {XMonad.modMask = myModKey}) = M.fromList $ [
 
     , ((myModKey, button4), (\w ->  windows W.focusUp))
     , ((myModKey, button5), (\w ->  windows W.focusDown))
-    , ((myModKey.|.controlMask, button4), (\w ->  moveTo Prev (WSIs $myHiddenWS AnyWS) >> printWs))
-    , ((myModKey.|.controlMask, button5), (\w ->  moveTo Next (WSIs $myHiddenWS AnyWS) >> printWs))
+    , ((myModKey.|.controlMask, button4), (\w ->  moveTo Prev (WSIs $myHiddenWS anyWS) >> printWs))
+    , ((myModKey.|.controlMask, button5), (\w ->  moveTo Next (WSIs $myHiddenWS anyWS) >> printWs))
     
     , ((0,13 :: Button) , ( \w -> spawn "google-chrome" ))
     , ((0,10 :: Button) , ( \w -> spawn "gnome-terminal" )) 
     ]
 
 myManageHook = composeAll
-    [ className =? "Gimp"        --> doFloat
-    , className =? "Vncviewer"   --> doFloat
+    [ --className =? "Gimp"        --> doFloat ,
+      className =? "Vncviewer"   --> doFloat
     , className =? "stalonetray" --> doIgnore
     , className =? "com-mathworks-util-PostVMInit" --> doFloat
     , className =? "Cairo-dock" --> doFloat
@@ -186,7 +186,7 @@ myKeys=
  , ((myModKey                , xK_f), floatWindow)
  , ((myModKey                , xK_v), quickPrompt layoutOptions)
  , ((myModKey .|. shiftMask  , xK_BackSpace), scratchpadSpawnActionTerminal scratchTerminal) 
- , ((myModKey                , xK_BackSpace), scratchpadSpawnTerminalProgram "/home/fabio/pyenv/bin/ipython" "ipython") 
+ , ((myModKey                , xK_BackSpace), scratchpadSpawnTerminalProgram "ipython" "ipython") 
  , ((myModKey .|. controlMask, xK_BackSpace), spawn "gnome-screensaver-command -l")
  , ((myModKey                , xK_F5), scratchpadSpawnProgram "slack" "slack") 
  , ((myModKey                , xK_F9), scratchpadSpawnProgram "firefox" "Navigator")
@@ -207,10 +207,10 @@ myKeys=
         withPlainWs =  zip [xK_1 .. xK_9]  $ map (\ws ac -> ac ws)   myWorkspaces :: [(KeySym, WithWsType)] 
         withPhysicalWs = zip [xK_w, xK_e, xK_r] $ map (\sc ac -> getScreen def sc >>= screenWorkspace' >>= flip whenJust ac) [0..] :: [(KeySym, WithWsType)] 
         withHiddenWs = [(key, doTo dir (WSIs $ myHiddenWS wsType) order) |
-                           (key,dir,wsType,order) <- [ (xK_0,Next,EmptyWS,getSortByIndex)
-                                                 , (xK_minus,Prev,NonEmptyWS,getSortByIndex)
-                                                 , (xK_asciicircum,Next,NonEmptyWS,getSortByIndex)
-                                                 , (xK_u,Next,NonEmptyWS,getSortByHistory)
+                           (key,dir,wsType,order) <- [ (xK_0,Next,emptyWS,getSortByIndex)
+                                                 , (xK_minus,Prev,XMonad.Actions.CycleWS.Not emptyWS,getSortByIndex)
+                                                 , (xK_asciicircum,Next,XMonad.Actions.CycleWS.Not emptyWS,getSortByIndex)
+                                                 , (xK_u,Next,XMonad.Actions.CycleWS.Not emptyWS,getSortByHistory)
                                                  ]
                      ] ::[(KeySym, WithWsType)] 
         navCombiner (act,loop) ctx = act ctx loop
@@ -236,7 +236,7 @@ myKeys=
                                      (open,close) = if tag == W.currentTag winset then wrapCharsCurrent
                                       else if isVisible tag winset then wrapCharsVisible else wrapCharsHidden
                                  return $ open ++ W.tag ws ++ close ++ name ++ wid 
-        myWindowPrompt action c = windowPrompt c action (windowMap' myDecorateName)
+        myWindowPrompt action c = windowPrompt c action (windowMap' def{windowTitler=myDecorateName }  )
         windowToScreenMaster dir loop = windowToScreen dir loop >> screenGo dir loop >> windows W.swapMaster
         layoutOptions = [(key++":"++layout, sendMessage $ JumpToLayout layout) |
                            (key,layout) <- [("v","Tile"),("0","Full"),("1","Tab"),("2","Double") ]
@@ -275,7 +275,7 @@ getSortByHistory = mkWsSort $ do let cmp Nothing Nothing = EQ
 myDynamicTheme :: DynamicTheme 
 myDynamicTheme = def{
   theme=do col<-clockColor
-           return Theme{ activeColor         = col
+           return def{ activeColor         = col
                        , inactiveColor       = "black"
                        , urgentColor         = "#FFFF00"
                        , activeBorderColor   = "#FFFFFF"
@@ -389,8 +389,8 @@ getOrderedScreens =do w <- gets windowset
 myHiddenWS :: WSType -> X (WindowSpace -> Bool)
 myHiddenWS t= do hs <- gets (map W.tag . W.hidden . windowset)
                  let e = case t of
-                      EmptyWS-> isNothing . W.stack
-                      NonEmptyWS -> not .isNothing . W.stack
+                      emptyWS-> isNothing . W.stack
+                      XMonad.Actions.CycleWS.Not emptyWS -> not .isNothing . W.stack
                       _ -> (\_ -> True)
 
                  let hidden = (\w -> W.tag w `elem` hs)
