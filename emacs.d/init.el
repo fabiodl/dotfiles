@@ -419,6 +419,7 @@ translation it is possible to get suggestion."
 (load "~/.emacs.d/work.el")
 
 
+
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -437,32 +438,35 @@ translation it is possible to get suggestion."
  ;; If there is more than one, they won't work right.
  '(notmuch-hello-auto-refresh t)
  '(notmuch-saved-searches
-   (quote
-    ((:name "inbox" :query "tag:inbox" :key "i" :search-type tree)
+   '((:name "inbox" :query "tag:inbox" :key "i" :search-type tree)
      (:name "unread" :query "tag:unread" :key "u" :search-type tree)
      (:name "flagged" :query "tag:flagged" :key "f" :search-type tree)
      (:name "sent" :query "tag:Sent" :key "t" :search-type tree)
      (:name "drafts" :query "tag:draft" :key "d" :search-type tree)
-     (:name "all mail" :query "*" :key "a" :search-type tree))))
+     (:name "all mail" :query "*" :key "a" :search-type tree)))
  '(notmuch-tag-formats
-   (quote
-    (("unread"
-      (propertize tag
-                  (quote face)
-                  (quote notmuch-tag-unread)))
+   '(("unread"
+      (propertize tag 'face 'notmuch-tag-unread))
      ("flagged"
       (notmuch-tag-format-image-data tag
                                      (notmuch-tag-star-icon))
-      (propertize tag
-                  (quote face)
-                  (quote notmuch-tag-flagged)))
+      (propertize tag 'face 'notmuch-tag-flagged))
      ("amro/toConfirm"
       (notmuch-apply-face tag
-                          (quote
-                           (:foreground "magenta")))))))
+                          '(:foreground "magenta")))))
  '(package-selected-packages
-   (quote
-    (csv-mode php-mode auctex  mozc-im japanese-holidays w3m ercn google-translate mwim haskell-mode magit jedi mozc flycheck-pyflakes py-autopep8 tangotango-theme flycheck elpy ein better-defaults)))
- '(send-mail-function (quote smtpmail-send-it))
+   '(telega csv-mode php-mode auctex mozc-im japanese-holidays w3m ercn google-translate mwim haskell-mode magit jedi mozc flycheck-pyflakes py-autopep8 tangotango-theme flycheck elpy ein better-defaults))
+ '(send-mail-function 'smtpmail-send-it)
  '(smtpmail-smtp-server "localhost")
- '(smtpmail-smtp-service 1025))
+ '(smtpmail-smtp-service 1025)
+ '(telega-mode-line-string-format
+   '("   "
+     (:eval
+      (when telega-use-tracking-for
+        (telega-mode-line-tracking)))
+     (:eval
+      (telega-mode-line-unread-unmuted))
+     (:eval
+      (telega-mode-line-mentions 'messages))))
+ '(telega-notifications-mode t)
+ '(telega-notifications-msg-body-limit 0))
