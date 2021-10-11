@@ -1,7 +1,7 @@
 (defvar corp-packages
   '(w3m
    ;wanderlust
-   ;notmuch
+    notmuch
     japanese-holidays)
   )
 
@@ -72,10 +72,10 @@
 (defun my-confirm-sending ()
   "Allow user to quit when current message subject is empty."
   (let ((ccs (message-field-value "Cc")))
-    (or (yes-or-no-p (concatenate 'string "Send mail to "
-                                  (message-field-value "To")
-                                  (unless (null ccs) (concatenate 'string " cc:" ccs))
-                                  "?"))
+    (or (yes-or-no-p (concat "Send mail to "
+                             (message-field-value "To")
+                             (unless (null ccs) (concat " cc:" ccs))
+                             "?"))
       (keyboard-quit))))
 
 
