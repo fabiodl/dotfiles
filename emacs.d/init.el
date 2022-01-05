@@ -100,7 +100,7 @@
       elpy-rpc-python-command "python3"
       python-shell-interpreter-args "--simple-prompt -i"
       elpy-shell-echo-input nil
-      elpy-shell-use-project-root nil ; this makes C-c C-c run in the current dir
+      elpy-shell-starting-directory (quote current-directory) ; this makes C-c C-c run in the current dir
       elpy-shell-display-buffer-after-send t)
 
 ;; use flycheck not flymake with elpy
