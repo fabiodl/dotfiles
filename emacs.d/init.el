@@ -100,7 +100,8 @@
       elpy-rpc-python-command "python3"
       python-shell-interpreter-args "--simple-prompt -i"
       elpy-shell-echo-input nil
-      elpy-shell-use-project-root nil ; this makes C-c C-c run in the current dir
+      elpy-shell-starting-directory 'current-directory ; this makes C-c C-c run in the current dir
+      elpy-shell-use-project-root nil 
       elpy-shell-display-buffer-after-send t)
 
 ;; use flycheck not flymake with elpy
@@ -403,6 +404,7 @@ translation it is possible to get suggestion."
 (add-to-list 'ac-modes 'z80-mode)
 (setq-default indent-tabs-mode nil)
 
+(setq hexl-bits 8)
 
 ;;colorized compilation buffer
 (require 'ansi-color)
@@ -417,6 +419,15 @@ translation it is possible to get suggestion."
 ;; WORK RELATED
 ;; --------------------------------------
 (load "~/.emacs.d/work.el")
+
+(if (not window-system)		;; Only use in tty-sessions.
+     (progn
+      (defvar arrow-keys-map (make-sparse-keymap) "Keymap for arrow keys")
+      (define-key esc-map "[" arrow-keys-map)
+      (define-key arrow-keys-map "A" 'previous-line)
+      (define-key arrow-keys-map "B" 'next-line)
+      (define-key arrow-keys-map "C" 'forward-char)
+      (define-key arrow-keys-map "D" 'backward-char)))
 
 
 (custom-set-faces
@@ -462,7 +473,8 @@ translation it is possible to get suggestion."
                            (:foreground "magenta")))))))
  '(package-selected-packages
    (quote
-    (csv-mode php-mode auctex mozc-im japanese-holidays w3m ercn google-translate mwim haskell-mode magit jedi mozc flycheck-pyflakes py-autopep8 tangotango-theme flycheck elpy ein better-defaults)))
+    (yaml-mode telega csv-mode php-mode auctex mozc-im japanese-holidays w3m ercn google-translate mwim haskell-mode magit jedi mozc flycheck-pyflakes py-autopep8 tangotango-theme flycheck elpy ein better-defaults)))
  '(send-mail-function (quote smtpmail-send-it))
  '(smtpmail-smtp-server "localhost")
  '(smtpmail-smtp-service 1025))
+(put 'upcase-region 'disabled nil)
