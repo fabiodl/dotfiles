@@ -100,8 +100,7 @@
       elpy-rpc-python-command "python3"
       python-shell-interpreter-args "--simple-prompt -i"
       elpy-shell-echo-input nil
-      elpy-shell-starting-directory 'current-directory ; this makes C-c C-c run in the current dir
-      elpy-shell-use-project-root nil 
+      elpy-shell-starting-directory (quote current-directory) ; this makes C-c C-c run in the current dir
       elpy-shell-display-buffer-after-send t)
 
 ;; use flycheck not flymake with elpy
@@ -430,6 +429,7 @@ translation it is possible to get suggestion."
       (define-key arrow-keys-map "D" 'backward-char)))
 
 
+
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -476,5 +476,18 @@ translation it is possible to get suggestion."
     (yaml-mode telega csv-mode php-mode auctex mozc-im japanese-holidays w3m ercn google-translate mwim haskell-mode magit jedi mozc flycheck-pyflakes py-autopep8 tangotango-theme flycheck elpy ein better-defaults)))
  '(send-mail-function (quote smtpmail-send-it))
  '(smtpmail-smtp-server "localhost")
- '(smtpmail-smtp-service 1025))
-(put 'upcase-region 'disabled nil)
+ '(smtpmail-smtp-service 1025)
+ '(telega-mode-line-string-format
+   (quote
+    ("   "
+     (:eval
+      (when telega-use-tracking-for
+        (telega-mode-line-tracking)))
+     (:eval
+      (telega-mode-line-unread-unmuted))
+     (:eval
+      (telega-mode-line-mentions
+       (quote messages))))))
+ '(telega-notifications-mode t)
+ '(telega-notifications-msg-body-limit 0))
+

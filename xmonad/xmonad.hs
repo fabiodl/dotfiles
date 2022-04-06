@@ -60,6 +60,11 @@ import DynamicDecoration
 
 myModKey = mod4Mask                  
 
+data MyWSType = MyEmptyWS
+              | MyNonEmptyWS
+              | MyAnyWS
+
+
 myMouseBindings (XConfig {XMonad.modMask = myModKey}) = M.fromList $ [
     -- mod-button1, Set the window to floating mode and move by dragging
     ((myModKey, button1), (\w -> focus w >> mouseMoveWindow w))
@@ -70,8 +75,8 @@ myMouseBindings (XConfig {XMonad.modMask = myModKey}) = M.fromList $ [
 
     , ((myModKey, button4), (\w ->  windows W.focusUp))
     , ((myModKey, button5), (\w ->  windows W.focusDown))
-    , ((myModKey.|.controlMask, button4), (\w ->  moveTo Prev (WSIs $myHiddenWS AnyWS) >> printWs))
-    , ((myModKey.|.controlMask, button5), (\w ->  moveTo Next (WSIs $myHiddenWS AnyWS) >> printWs))
+    , ((myModKey.|.controlMask, button4), (\w ->  moveTo Prev (WSIs $myHiddenWS MyAnyWS) >> printWs))
+    , ((myModKey.|.controlMask, button5), (\w ->  moveTo Next (WSIs $myHiddenWS MyAnyWS) >> printWs))
     
     , ((0,13 :: Button) , ( \w -> spawn "google-chrome" ))
     , ((0,10 :: Button) , ( \w -> spawn "gnome-terminal" )) 
@@ -99,6 +104,7 @@ myFgColor = "black"
 
 --for Prompt
 myXPConfig = def{
+  font="-*-dejavu sans mono-medium-r-normal--*-80-*-*-*-*-iso10646-1",
   fgColor=myFgColor
   , bgColor=myBgColor
   , fgHLight=myBgColor
@@ -179,8 +185,8 @@ myKeys=
  , ((myModKey                , xK_p), withColour myXPConfig{maxComplRows = Just 3} shellPrompt)
  , ((myModKey .|. shiftMask  , xK_p), withColour myXPConfig (spawn . dmenu) )
  , ((myModKey                , xK_x), quickPrompt spawnOptions)
- , ((myModKey                , xK_s), sendMessage (Toggle REFLECTX) >> printWs)
  , ((myModKey .|. shiftMask  , xK_s), screenSwap L True >>printWs)
+ , ((myModKey .|. controlMask, xK_s), sendMessage (Toggle REFLECTX) >> printWs)
  , ((myModKey .|. controlMask, xK_Return), sendMessage SwapWindow)
  , ((myModKey .|. shiftMask  , xK_t), sinkAll >> printWs)
  , ((myModKey                , xK_f), floatWindow)
@@ -207,10 +213,10 @@ myKeys=
         withPlainWs =  zip [xK_1 .. xK_9]  $ map (\ws ac -> ac ws)   myWorkspaces :: [(KeySym, WithWsType)] 
         withPhysicalWs = zip [xK_w, xK_e, xK_r] $ map (\sc ac -> getScreen def sc >>= screenWorkspace' >>= flip whenJust ac) [0..] :: [(KeySym, WithWsType)] 
         withHiddenWs = [(key, doTo dir (WSIs $ myHiddenWS wsType) order) |
-                           (key,dir,wsType,order) <- [ (xK_0,Next,EmptyWS,getSortByIndex)
-                                                 , (xK_minus,Prev,NonEmptyWS,getSortByIndex)
-                                                 , (xK_asciicircum,Next,NonEmptyWS,getSortByIndex)
-                                                 , (xK_u,Next,NonEmptyWS,getSortByHistory)
+                           (key,dir,wsType,order) <- [ (xK_0,Next,MyEmptyWS,getSortByIndex)
+                                                 , (xK_minus,Prev,MyNonEmptyWS,getSortByIndex)
+                                                 , (xK_asciicircum,Next,MyNonEmptyWS,getSortByIndex)
+                                                 , (xK_u,Next,MyNonEmptyWS,getSortByHistory)
                                                  ]
                      ] ::[(KeySym, WithWsType)] 
         navCombiner (act,loop) ctx = act ctx loop
@@ -236,7 +242,7 @@ myKeys=
                                      (open,close) = if tag == W.currentTag winset then wrapCharsCurrent
                                       else if isVisible tag winset then wrapCharsVisible else wrapCharsHidden
                                  return $ open ++ W.tag ws ++ close ++ name ++ wid 
-        myWindowPrompt action c = windowPrompt c action (windowMap' myDecorateName)
+        myWindowPrompt action c = windowPrompt c action (windowMap' def{windowTitler=myDecorateName }  )
         windowToScreenMaster dir loop = windowToScreen dir loop >> screenGo dir loop >> windows W.swapMaster
         layoutOptions = [(key++":"++layout, sendMessage $ JumpToLayout layout) |
                            (key,layout) <- [("v","Tile"),("0","Full"),("1","Tab"),("2","Double") ]
@@ -275,7 +281,7 @@ getSortByHistory = mkWsSort $ do let cmp Nothing Nothing = EQ
 myDynamicTheme :: DynamicTheme 
 myDynamicTheme = def{
   theme=do col<-clockColor
-           return Theme{ activeColor         = col
+           return def{ activeColor         = col
                        , inactiveColor       = "black"
                        , urgentColor         = "#FFFF00"
                        , activeBorderColor   = "#FFFFFF"
@@ -386,12 +392,13 @@ getOrderedScreens :: X [ScreenId]
 getOrderedScreens =do w <- gets windowset
                       return (map W.screen $ DL.sortBy (cmpScreen' `on` (screenRect . W.screenDetail)) $ W.current w : W.visible w)
 
-myHiddenWS :: WSType -> X (WindowSpace -> Bool)
+
+myHiddenWS :: MyWSType -> X (WindowSpace -> Bool)
 myHiddenWS t= do hs <- gets (map W.tag . W.hidden . windowset)
                  let e = case t of
-                      EmptyWS-> isNothing . W.stack
-                      NonEmptyWS -> not .isNothing . W.stack
-                      _ -> (\_ -> True)
+                      MyEmptyWS-> isNothing . W.stack
+                      MyNonEmptyWS -> not .isNothing . W.stack
+                      MyAnyWS -> (\_ -> True)
 
                  let hidden = (\w -> W.tag w `elem` hs)
                  let knownWs = (\w -> W.tag w `elem` myWorkspaces) 
