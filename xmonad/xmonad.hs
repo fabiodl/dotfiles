@@ -322,7 +322,7 @@ main = do
          , focusedBorderColor =  myFgColor
          , modMask = myModKey 
          , startupHook = setWMName "LG3D"
-         , handleEventHook = handleEventHook gnomeConfig <+> fullscreenEventHook <+> handleTimerEvent
+         , handleEventHook = handleEventHook gnomeConfig <+> handleTimerEvent
          , manageHook = myManageHook <+> manageHook gnomeConfig
          , workspaces = myWorkspaces
          } `additionalKeys` myKeys `removeKeys` myDisableKeys 

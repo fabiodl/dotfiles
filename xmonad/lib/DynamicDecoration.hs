@@ -165,7 +165,6 @@ instance (DecorationStyle ds Window, Shrinker s) => LayoutModifier (DynamicDecor
                                 let ndwrs = zip toAdd $ repeat (Nothing,Nothing)
                                 ndecos <- resync (ndwrs ++ del_dwrs d dwrs) wrs t
                                 processState (s {decos = ndecos }) t
-        | otherwise        = return (wrs, Nothing)
 
         where
           ws        = map fst wrs

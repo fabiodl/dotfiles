@@ -116,6 +116,8 @@
 (setq ein:completion-backend 'ein:use-ac-jedi-backend)
 (add-hook 'ein:notebook-mode-hook 'ein:remove-movecell-keybindings)
 
+(setq request-curl-options  '("--noproxy" "127.0.0.1")) ;for ein
+
 (defun ein:remove-movecell-keybindings ()
   (progn (define-key ein:notebook-mode-map (kbd "C-c <up>") nil)
          (define-key ein:notebook-mode-map (kbd "C-c <down>") nil)
@@ -131,7 +133,7 @@
 (setq flycheck-highlighting-mode 'lines)
 
 ;fix ein authentication bug
-(advice-add 'request--netscape-cookie-parse :around #'fix-request-netscape-cookie-parse)
+;(advice-add 'request--netscape-cookie-parse :around #'fix-request-netscape-cookie-parse)
 
 ;;make transparent figures visible
 (defadvice ein:insert-image (around ein-transparent-color-replacement activate)
@@ -446,6 +448,7 @@ translation it is possible to get suggestion."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(ein:output-area-inlined-images t)
  '(notmuch-hello-auto-refresh t)
  '(notmuch-saved-searches
    (quote
@@ -490,4 +493,5 @@ translation it is possible to get suggestion."
        (quote messages))))))
  '(telega-notifications-mode t)
  '(telega-notifications-msg-body-limit 0))
+
 
