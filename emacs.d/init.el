@@ -38,7 +38,10 @@
     ercn
     csv-mode
     php-mode
+    rust-mode
+    nov
     auctex
+    clang-format+
 ))
 
 (defun install-missing-packages (package-list)
@@ -450,6 +453,7 @@ translation it is possible to get suggestion."
  ;; If there is more than one, they won't work right.
  '(ein:output-area-inlined-images t)
  '(notmuch-hello-auto-refresh t)
+ '(notmuch-search-oldest-first nil)
  '(notmuch-saved-searches
    (quote
     ((:name "inbox" :query "tag:inbox" :key "i" :search-type tree)
@@ -492,6 +496,15 @@ translation it is possible to get suggestion."
       (telega-mode-line-mentions
        (quote messages))))))
  '(telega-notifications-mode t)
- '(telega-notifications-msg-body-limit 0))
+ '(telega-notifications-msg-body-limit 0)
+ '(org-agenda-files '("~/.emacs.d/agenda"))
 
+ )
 
+(org-agenda-to-appt)
+(add-hook 'c-mode-common-hook #'clang-format+-mode)
+(require 'rust-mode)
+
+(setq rust-format-on-save t)
+
+(add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
