@@ -10,7 +10,8 @@ import Text.Printf
 import Control.Applicative((<$>))
 import Numeric (showHex)
 import XMonad hiding ( (|||) )
-import XMonad.Config.Gnome
+--- import XMonad.Config.Gnome
+import XMonad.Config.Mate
 import XMonad.Operations as Ope
 
 import qualified DBus as D
@@ -24,7 +25,7 @@ import XMonad.Layout.NoBorders(smartBorders)
 import XMonad.Layout.Reflect
 import XMonad.Layout.MultiToggle
 import XMonad.Layout.MultiToggle.Instances
-import XMonad.Layout.LayoutCombinators 
+import XMonad.Layout.LayoutCombinators
 import XMonad.Layout.Renamed
 import XMonad.Layout.TwoPane
 import XMonad.Layout.ComboP
@@ -42,7 +43,7 @@ import XMonad.Actions.Navigation2D
 import XMonad.Actions.SinkAll
 import XMonad.Actions.WindowBringer
 import XMonad.Actions.PhysicalScreens  (getScreen,PhysicalScreen)
-  
+
 import XMonad.Prompt
 import XMonad.Prompt.Window
 import XMonad.Prompt.Shell
@@ -57,8 +58,9 @@ import XMonad.Util.NamedScratchpad
 
 import CenteredFlash
 import DynamicDecoration
+import XMonad.Actions.OnScreen
 
-myModKey = mod4Mask                  
+myModKey = mod4Mask
 
 data MyWSType = MyEmptyWS
               | MyNonEmptyWS
@@ -69,7 +71,7 @@ myMouseBindings (XConfig {XMonad.modMask = myModKey}) = M.fromList $ [
     -- mod-button1, Set the window to floating mode and move by dragging
     ((myModKey, button1), (\w -> focus w >> mouseMoveWindow w))
     -- mod-button2, Raise the window to the top of the stack
-    , ((myModKey, button2), (\w -> focus w >> windows W.swapMaster))    
+    , ((myModKey, button2), (\w -> focus w >> windows W.swapMaster))
     -- mod-button3, Set the window to floating mode and resize by dragging
     , ((myModKey, button3), (\w -> focus w >> mouseResizeWindow w))
 
@@ -77,9 +79,9 @@ myMouseBindings (XConfig {XMonad.modMask = myModKey}) = M.fromList $ [
     , ((myModKey, button5), (\w ->  windows W.focusDown))
     , ((myModKey.|.controlMask, button4), (\w ->  moveTo Prev (WSIs $myHiddenWS MyAnyWS) >> printWs))
     , ((myModKey.|.controlMask, button5), (\w ->  moveTo Next (WSIs $myHiddenWS MyAnyWS) >> printWs))
-    
+
     , ((0,13 :: Button) , ( \w -> spawn "google-chrome" ))
-    , ((0,10 :: Button) , ( \w -> spawn "gnome-terminal" )) 
+    , ((0,10 :: Button) , ( \w -> spawn "gnome-terminal" ))
     ]
 
 myManageHook = composeAll
@@ -90,12 +92,19 @@ myManageHook = composeAll
     , className =? "Cairo-dock" --> doFloat
     , className =? "platform-Emulicious" -->doFloat
     ]  -- <+> scratchpadManageHook rect
-       <+> myScratchpadHook (W.RationalRect 0 0 1 0.3) ["scratchpad"]
-       <+> myScratchpadHook (W.RationalRect 0 0.7 1 0.3) ["ipython"]
-  where
-    scratchpadQuery winNames = fmap (\x -> elem x winNames) resource --checks if the window name is in the winNames list
-    myScratchpadHook rect winNames = namedScratchpadManageHook [NS "" "" (scratchpadQuery winNames) (customFloating rect)]
+--       <+> myScratchpadHook (W.RationalRect 0 0 1 0.3) ["scratchpad"]
+--       <+> myScratchpadHook (W.RationalRect 0 0.7 1 0.3) ["ipython"]
+--  where
+--    scratchpadQuery winNames = fmap (\x -> elem x winNames) resource --checks if the window name is in the winNames list
+--    myScratchpadHook rect winNames = namedScratchpadManageHook [NS "" "" (scratchpadQuery winNames) (customFloating rect)]
 -- doSink = ask >>= \w -> doF (W.sink w)
+
+
+scratchpads=[
+  NS "term"    "urxvt -name term" (resource =? "term") (customFloating $ W.RationalRect 0 0 1 0.3) ,
+  NS "ipython" "urxvt -name ipython -e ipython" (title =? "ipython") (customFloating $ W.RationalRect 0 0.7 1 0.3)
+            ]
+
 
 myWorkspaces = map show [1..9]
 
@@ -110,7 +119,7 @@ myXPConfig = def{
   , fgHLight=myBgColor
   , bgHLight=myFgColor
   , borderColor=myFgColor
-  , searchPredicate = \a b -> DL.isInfixOf (toUpper a) (toUpper b)  
+  , searchPredicate = \a b -> DL.isInfixOf (toUpper a) (toUpper b)
   , alwaysHighlight = True
   }
 
@@ -128,7 +137,7 @@ type NavAction = (Direction2D -> Bool -> X())
 
 [virtRight,virtLeft,virtUp,virtDown] = [xK_bracketright, xK_semicolon, xK_at, xK_colon]
 [mvirtRight,mvirtLeft,mvirtUp,mvirtDown] = [ xK_Page_Down, xK_Delete, xK_Home, xK_End]
-[virtBtn1,virtBtn3] = [xK_Insert,xK_Page_Up]  
+[virtBtn1,virtBtn3] = [xK_Insert,xK_Page_Up]
 
 
 
@@ -146,11 +155,11 @@ myMouseKeys =
 
 
 makeTermCmds:: String -> [String] -> [(String,String,String)]
-makeTermCmds setter vals = [ ("tt","term trasnp",setter++(vals!!0) ), ("th","term halftr",setter++(vals!!1) ), ("to","term opaque",setter++(vals!!2) )] 
+makeTermCmds setter vals = [ ("tt","term trasnp",setter++(vals!!0) ), ("th","term halftr",setter++(vals!!1) ), ("to","term opaque",setter++(vals!!2) )]
 
 
 gconfCmds=makeTermCmds "gconftool-2 --set /apps/gnome-terminal/profiles/Default/background_darkness --type=float " ["0","0.5","1"]
-dconfCmds=makeTermCmds "dconf write \"/org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/background-transparency-percent\" " ["100", "50", "0"] 
+dconfCmds=makeTermCmds "dconf write \"/org/gnome/terminal/legacy/profiles:/:b1dcc9dd-5262-4d8d-a863-c897e6d979b9/background-transparency-percent\" " ["100", "50", "0"]
 
 
 
@@ -165,19 +174,19 @@ floatWindow = withDisplay $ \display ->
         where avg a b = ceiling $ fromIntegral (a + b) / 2
               midw = avg minw maxw
               midh = avg minh maxh
-                                                                              
+
       _ -> return ()
     Ope.float window
-  
-scratchTerminal = "urxvt"
-scratchpadSpawnProgram prog winName =  namedScratchpadAction [NS winName prog (resource =? winName) nonFloating] winName
-scratchpadSpawnTerminalProgram prog winName = scratchpadSpawnProgram (scratchTerminal++" -name "++winName++" -e "++prog) winName
+
+--scratchTerminal = "urxvt"
+--scratchpadSpawnProgram prog winName =  namedScratchpadAction [NS winName prog (resource =? winName) nonFloating] winName
+--scratchpadSpawnTerminalProgram prog winName = scratchpadSpawnProgram (scratchTerminal++" -name "++winName++" -e "++prog) winName
 
 
 screenWorkspace':: Maybe ScreenId -> X(Maybe WorkspaceId)
 screenWorkspace' (Just x) = screenWorkspace x
 screenWorkspace' Nothing = return Nothing
-  
+
 myKeys=
  [ ((myModKey .|. shiftMask .|. controlMask, xK_q), io exitSuccess)
  , ((myModKey                , xK_g ), printWs >> withColour myXPConfig (myWindowPrompt Goto)  >> printWs)
@@ -191,34 +200,35 @@ myKeys=
  , ((myModKey .|. shiftMask  , xK_t), sinkAll >> printWs)
  , ((myModKey                , xK_f), floatWindow)
  , ((myModKey                , xK_v), quickPrompt layoutOptions)
- , ((myModKey .|. shiftMask  , xK_BackSpace), scratchpadSpawnActionTerminal scratchTerminal) 
- , ((myModKey                , xK_BackSpace), scratchpadSpawnTerminalProgram "ipython" "ipython") 
- , ((myModKey .|. controlMask, xK_BackSpace), spawn "gnome-screensaver-command -l")
- , ((myModKey                , xK_F5), scratchpadSpawnProgram "slack" "slack") 
- , ((myModKey                , xK_F9), scratchpadSpawnProgram "firefox" "Navigator")
+ , ((myModKey .|. shiftMask  , xK_BackSpace), namedScratchpadAction scratchpads "term") --scratchpadSpawnActionTerminal scratchTerminal)
+ , ((myModKey                , xK_BackSpace), namedScratchpadAction scratchpads "ipython")
+ , ((myModKey .|. controlMask, xK_BackSpace), spawn "mate-screensaver-command -l")
+-- , ((myModKey                , xK_F5), scratchpadSpawnProgram "slack" "slack")
+-- , ((myModKey                , xK_F9), scratchpadSpawnProgram "firefox" "Navigator")
  , ((myModKey .|. shiftMask  , xK_h), sendMessage Shrink) -- %! Expand the master area
  , ((myModKey .|. shiftMask  , xK_l), sendMessage Expand) -- %! Expand the master area
  , ((myModKey .|. controlMask, xK_Return), spawn "xfce4-terminal")
+ , ((myModKey                , xK_a), (windows (viewOnScreen 0 "1") >> windows (viewOnScreen 1 "3") )  )
  ]
  ++
  myMouseKeys
  ++
- makeKeybindings wsCombiner ((0,lazyView):wsActions) (withPlainWs++withHiddenWs) 
+ makeKeybindings wsCombiner ((0,lazyView):wsActions) (withPlainWs++withHiddenWs)
  ++
  makeKeybindings wsCombiner  ((0,W.view):wsActions) withPhysicalWs
  ++
  makeKeybindings navCombiner navActions navDirs
-  where wsCombiner act ctx = ctx (windows . act) >> printWs 
+  where wsCombiner act ctx = ctx (windows . act) >> printWs
         wsActions = [(shiftMask, W.shift), (mod1Mask, W.greedyView), (controlMask,shiftAndGo)] :: [(KeyMask,WsAction)]
-        withPlainWs =  zip [xK_1 .. xK_9]  $ map (\ws ac -> ac ws)   myWorkspaces :: [(KeySym, WithWsType)] 
-        withPhysicalWs = zip [xK_w, xK_e, xK_r] $ map (\sc ac -> getScreen def sc >>= screenWorkspace' >>= flip whenJust ac) [0..] :: [(KeySym, WithWsType)] 
+        withPlainWs =  zip [xK_1 .. xK_9]  $ map (\ws ac -> ac ws)   myWorkspaces :: [(KeySym, WithWsType)]
+        withPhysicalWs = zip [xK_w, xK_e, xK_r] $ map (\sc ac -> getScreen def sc >>= screenWorkspace' >>= flip whenJust ac) [0..] :: [(KeySym, WithWsType)]
         withHiddenWs = [(key, doTo dir (WSIs $ myHiddenWS wsType) order) |
                            (key,dir,wsType,order) <- [ (xK_0,Next,MyEmptyWS,getSortByIndex)
                                                  , (xK_minus,Prev,MyNonEmptyWS,getSortByIndex)
                                                  , (xK_asciicircum,Next,MyNonEmptyWS,getSortByIndex)
                                                  , (xK_u,Next,MyNonEmptyWS,getSortByHistory)
                                                  ]
-                     ] ::[(KeySym, WithWsType)] 
+                     ] ::[(KeySym, WithWsType)]
         navCombiner (act,loop) ctx = act ctx loop
         navActions = [ (0,(windowGo,False))
                      , (shiftMask,(windowSwap,False))
@@ -227,10 +237,10 @@ myKeys=
                      ] :: [(KeyMask,(NavAction,Bool))]
         navDirs = [ (xK_Right, R), (xK_Left, L), (xK_Up, U), (xK_Down, D),
                     (virtRight, R), (virtLeft, L), (virtUp, U), (virtDown, D)
-                  ]  :: [(KeySym, Direction2D)]            
+                  ]  :: [(KeySym, Direction2D)]
         quickPrompt choices = withColour c (xmonadPromptC choices)
           where c = myXPConfig{searchPredicate = DL.isPrefixOf,  autoComplete = Just 3}
-        shiftAndGo wid winset =  W.view wid $ W.shift wid winset  
+        shiftAndGo wid winset =  W.view wid $ W.shift wid winset
         myDecorateName ws w = do name <- show <$> getName w
                                  winset <- gets windowset
                                  let tag = W.tag ws
@@ -241,7 +251,7 @@ myKeys=
                                      wid = if ncopies >2 then " #" ++ showHex  w "" else ""
                                      (open,close) = if tag == W.currentTag winset then wrapCharsCurrent
                                       else if isVisible tag winset then wrapCharsVisible else wrapCharsHidden
-                                 return $ open ++ W.tag ws ++ close ++ name ++ wid 
+                                 return $ open ++ W.tag ws ++ close ++ name ++ wid
         myWindowPrompt action c = windowPrompt c action (windowMap' def{windowTitler=myDecorateName }  )
         windowToScreenMaster dir loop = windowToScreen dir loop >> screenGo dir loop >> windows W.swapMaster
         layoutOptions = [(key++":"++layout, sendMessage $ JumpToLayout layout) |
@@ -265,20 +275,20 @@ makeKeybindings :: (act->ctx->X ()) -> [(KeyMask,act)] -> [(KeySym, ctx)] -> [((
 makeKeybindings  combiner maskAssoc keyAssoc  = [ ((myModKey .|. mask, key), combiner action context)
                                                 | (mask,action) <- maskAssoc, (key,context) <- keyAssoc]
 
-                                         
+
 
 getSortByHistory :: X WorkspaceSort
 getSortByHistory = mkWsSort $ do let cmp Nothing Nothing = EQ
                                      cmp Nothing (Just _) = GT
                                      cmp (Just _) Nothing = LT
                                      cmp a b = compare a b
-                                 wh <- workspaceHistory   
-                                 let hcmp = on cmp (\x -> DL.elemIndex x wh)                                       
+                                 wh <- workspaceHistory
+                                 let hcmp = on cmp (\x -> DL.elemIndex x wh)
                                  return hcmp
 
 
 
-myDynamicTheme :: DynamicTheme 
+myDynamicTheme :: DynamicTheme
 myDynamicTheme = def{
   theme=do col<-clockColor
            return def{ activeColor         = col
@@ -295,42 +305,44 @@ myDynamicTheme = def{
                        , decoHeight          = 20
                        , windowTitleAddons   = []
                        , windowTitleIcons    = []
-                       }  
+                       }
   }
 
 myTabClickBindings btn win | btn == button1 = focus win
                            | btn == button3 = focus win >> sendMessage SwapWindow
                            | otherwise    =  return ()
 
-myTiledLayout = renamed [Replace "Tile"] $ mkToggle (single REFLECTX) $ mkToggle (single MIRROR ) $ tall 
-  where tall =  Tall 1 (3/100) (1/2)  
+myTiledLayout = renamed [Replace "Tile"] $ mkToggle (single REFLECTX) $ mkToggle (single MIRROR ) $ tall
+  where tall =  Tall 1 (3/100) (1/2)
 myTabbedLayout = renamed [Replace "Tab"] $ mkToggle (single REFLECTX) $  dynamicTabs D myDynamicTheme def
 myDoubleLayout = renamed [Replace "Double"] $ combineTwoP (TwoPane 0.03 0.5) tabLayout tabLayout (Const False) where
   tabLayout = dynamicTabs D myDynamicTheme def{mouseClickBindings = myTabClickBindings}
-                                                                              
+
+
+deskConfig = mateConfig
 main :: IO ()
 main = do
     dbus <- D.connectSession
     getWellKnownName dbus
     xmonad $ docks $ withUrgencyHook NoUrgencyHook
            $ withNavigation2DConfig def
-           $ ewmh gnomeConfig           
+           $ ewmh deskConfig
            { logHook = clockColor >>= (\col -> dynamicLogWithPP (pangoPP dbus col) <+> (Main.setBorderColor col)) -- <+> fadeHook
          , mouseBindings = myMouseBindings
          , layoutHook = avoidStruts $ smartBorders  (  myTiledLayout ||| myDoubleLayout ||| myTabbedLayout ||| Full )
          , normalBorderColor   =  myBgColor
          , focusedBorderColor =  myFgColor
-         , modMask = myModKey 
+         , modMask = myModKey
          , startupHook = setWMName "LG3D"
-         , handleEventHook = handleEventHook gnomeConfig <+> handleTimerEvent
-         , manageHook = myManageHook <+> manageHook gnomeConfig
+         , handleEventHook = handleEventHook deskConfig <+> handleTimerEvent
+         , manageHook = myManageHook <+> namedScratchpadManageHook scratchpads  <+> manageHook deskConfig
          , workspaces = myWorkspaces
-         } `additionalKeys` myKeys `removeKeys` myDisableKeys 
-  
+         } `additionalKeys` myKeys `removeKeys` myDisableKeys
+
 pangoPP :: D.Client -> String -> PP
 pangoPP dbus col = def
     { ppOutput   = dbusOutput dbus
-    , ppTitle    = myFormat "white" sans 
+    , ppTitle    = myFormat "white" sans
     , ppTitleSanitize = pangoSanitize
     , ppCurrent  = myFormat "gold" mono .  pangoSanitize . wrapBy wrapCharsCurrent
     , ppVisible  = myFormat "darkorange" mono . pangoSanitize . wrapBy wrapCharsVisible
@@ -342,7 +354,7 @@ pangoPP dbus col = def
  where
     onlyKnown ws = if ws `elem` myWorkspaces then ws else "" --successive wraps return "" for a "" argument
     sans = "Sans Bold 8"
-    mono = "Monospace Bold 8" 
+    mono = "Monospace Bold 8"
     myFormat color font = wrap ("<span foreground=\"" ++color++"\" font=\""++font++"\">") "</span>"
 
 getWellKnownName :: D.Client -> IO ()
@@ -401,7 +413,7 @@ myHiddenWS t= do hs <- gets (map W.tag . W.hidden . windowset)
                       MyAnyWS -> (\_ -> True)
 
                  let hidden = (\w -> W.tag w `elem` hs)
-                 let knownWs = (\w -> W.tag w `elem` myWorkspaces) 
+                 let knownWs = (\w -> W.tag w `elem` myWorkspaces)
                  return (\w -> hidden w && e w && knownWs w)
 
 --adapted from http://xmonad.haskell.narkive.com/EToEJM1K/normal-rather-than-greedy-view-disable-screen-focus-switching
@@ -412,18 +424,18 @@ lazyView w ws = if isVisible w ws then ws else W.view w ws
 
 setBorderColor :: String -> X ()
 setBorderColor col = do d <- asks display
-                        px <- stringToPixel d col           
+                        px <- stringToPixel d col
                         ws <- gets (W.peek . windowset) --focused Window
                         case ws of
                           Nothing -> return ()
                           Just win -> setWindowBorderWithFallback d win col px
-                                   
+
 getWorkspacesString :: X String
-getWorkspacesString = do w <- gets windowset                         
+getWorkspacesString = do w <- gets windowset
                          screens <- getOrderedScreens
                          return $ foldr (++) "" (DL.intersperse " " [ highlight (W.currentTag w)  (fromMaybe "" $ W.lookupWorkspace sc w)  | sc <- screens])
                          where highlight curr ws = if curr == ws then wrapBy wrapCharsCurrent ws  else ws
-                         
+
 withColour :: XPConfig -> (XPConfig -> X() ) -> X()
 withColour c f = do col <-clockColor
                     f c{ fgColor = col
@@ -446,15 +458,15 @@ timeToColor time = let maxTime = 3600.0*23.0+60.0*59+61.0  :: Float
                                               +  60.0* (fromIntegral $ todMin time)
                                               + realToFrac(todSec time))   :: Float
                        (c,s) = (cos(theta),sin(theta))
-                       hue = clip 0 1 $ -0.363*c+0.101*s+0.379 
+                       hue = clip 0 1 $ -0.363*c+0.101*s+0.379
                        sat = clip 0 mxs $ 0.100*c+0.360*s+0.758 where
-                         mxs = min 1 $ 0.6+0.4*abs(hue-(2.0/3.0)) 
-                       val = clip 0 1$ 0.014*c+0.050*s+0.966 
+                         mxs = min 1 $ 0.6+0.4*abs(hue-(2.0/3.0))
+                       val = clip 0 1$ 0.014*c+0.050*s+0.966
                        color = hsv' hue sat val
                        [r,g,b]= map (clip 0 255 . round . (*255)) color ::[Integer]
                    in printf "#%02X%02X%02X" r g b where clip minv maxv x = min maxv $ max minv x
-                                                         
-getTime :: IO TimeOfDay                      
+
+getTime :: IO TimeOfDay
 getTime = fmap (localTimeOfDay . zonedTimeToLocalTime) getZonedTime
 
 --takes hue values in the range 0-1
@@ -477,4 +489,3 @@ mod1 x | pf < 0 = pf+1
        | otherwise = pf
  where
   (_,pf) = properFraction x
-
