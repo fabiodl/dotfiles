@@ -205,7 +205,7 @@ myKeys=
  , ((myModKey                , xK_v), quickPrompt layoutOptions)
  , ((myModKey .|. shiftMask  , xK_BackSpace), namedScratchpadAction scratchpads "term") --scratchpadSpawnActionTerminal scratchTerminal)
  , ((myModKey                , xK_BackSpace), namedScratchpadAction scratchpads "ipython")
- , ((myModKey .|. controlMask, xK_BackSpace), spawn "mate-screensaver-command -l")
+ , ((myModKey .|. controlMask, xK_BackSpace), spawn "xscreensaver-command -l")
 -- , ((myModKey                , xK_F5), scratchpadSpawnProgram "slack" "slack")
 -- , ((myModKey                , xK_F9), scratchpadSpawnProgram "firefox" "Navigator")
  , ((myModKey .|. shiftMask  , xK_h), sendMessage Shrink) -- %! Expand the master area
