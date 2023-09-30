@@ -69,9 +69,10 @@
 (add-hook 'window-setup-hook '(lambda() (set-new-frame-colors (selected-frame))))
 (set-new-frame-colors (selected-frame))
 
-
+(when (version<= "26.0.50" emacs-version )
+  (global-display-line-numbers-mode))
 ;(global-linum-mode t) ; enable line numbers globally
-(add-hook 'prog-mode-hook 'linum-mode)
+;(add-hook 'prog-mode-hook 'linum-mode)
 
 (setq column-number-mode t) ;column number
 

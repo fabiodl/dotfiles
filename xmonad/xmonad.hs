@@ -10,8 +10,8 @@ import Text.Printf
 import Control.Applicative((<$>))
 import Numeric (showHex)
 import XMonad hiding ( (|||) )
---- import XMonad.Config.Gnome
-import XMonad.Config.Mate
+import XMonad.Config.Gnome
+--import XMonad.Config.Mate
 import XMonad.Operations as Ope
 
 import qualified DBus as D
@@ -40,7 +40,7 @@ import XMonad.Hooks.WorkspaceHistory
 
 import XMonad.Actions.CycleWS
 import XMonad.Actions.Navigation2D
-import XMonad.Actions.SinkAll
+import XMonad.Actions.WithAll
 import XMonad.Actions.WindowBringer
 import XMonad.Actions.PhysicalScreens  (getScreen,PhysicalScreen)
 
@@ -49,7 +49,7 @@ import XMonad.Prompt.Window
 import XMonad.Prompt.Shell
 import XMonad.Prompt.XMonad
 
-import XMonad.Util.Scratchpad
+import XMonad.Util.NamedScratchpad
 import XMonad.Util.XUtils(stringToPixel)
 import XMonad.Util.WorkspaceCompare
 import XMonad.Util.NamedWindows (getName)
@@ -77,8 +77,8 @@ myMouseBindings (XConfig {XMonad.modMask = myModKey}) = M.fromList $ [
 
     , ((myModKey, button4), (\w ->  windows W.focusUp))
     , ((myModKey, button5), (\w ->  windows W.focusDown))
-    , ((myModKey.|.controlMask, button4), (\w ->  moveTo Prev (WSIs $myHiddenWS MyAnyWS) >> printWs))
-    , ((myModKey.|.controlMask, button5), (\w ->  moveTo Next (WSIs $myHiddenWS MyAnyWS) >> printWs))
+    , ((myModKey.|.controlMask, button4), (\w ->  moveTo Prev (WSIs $ myHiddenWS MyAnyWS) >> printWs))
+    , ((myModKey.|.controlMask, button5), (\w ->  moveTo Next (WSIs $ myHiddenWS MyAnyWS) >> printWs))
 
     , ((0,13 :: Button) , ( \w -> spawn "google-chrome" ))
     , ((0,10 :: Button) , ( \w -> spawn "gnome-terminal" ))
@@ -111,9 +111,12 @@ myWorkspaces = map show [1..9]
 myBgColor = "black"
 myFgColor = "black"
 
+myFont = "-*-dejavu sans mono-medium-r-normal--*-80-*-*-*-*-iso10646-1"
+
+
 --for Prompt
 myXPConfig = def{
-  font="-*-dejavu sans mono-medium-r-normal--*-80-*-*-*-*-iso10646-1",
+  font=myFont,
   fgColor=myFgColor
   , bgColor=myBgColor
   , fgHLight=myBgColor
@@ -300,7 +303,7 @@ myDynamicTheme = def{
                        , activeTextColor     = "black"
                        , inactiveTextColor   = col
                        , urgentTextColor     = "#FF0000"
-                       , fontName            = "-misc-fixed-*-*-*-*-10-*-*-*-*-*-*-*"
+                       , fontName            = myFont--"-misc-fixed-*-*-*-*-10-*-*-*-*-*-*-*"
                        , decoWidth           = 200
                        , decoHeight          = 20
                        , windowTitleAddons   = []
@@ -319,7 +322,9 @@ myDoubleLayout = renamed [Replace "Double"] $ combineTwoP (TwoPane 0.03 0.5) tab
   tabLayout = dynamicTabs D myDynamicTheme def{mouseClickBindings = myTabClickBindings}
 
 
-deskConfig = mateConfig
+deskConfig = gnomeConfig {terminal ="qterminal"}
+  --desktopConfig 
+  --mateConfig
 main :: IO ()
 main = do
     dbus <- D.connectSession
@@ -446,7 +451,7 @@ withColour c f = do col <-clockColor
 printWs :: X ()
 printWs = do text <- getWorkspacesString
              c <-clockColor
-             flashText' def{st_bg = myBgColor, st_fg = c} 1 text
+             flashText' def{st_bg = myBgColor, st_fg = c, st_font = myFont } 1 text
 
 clockColor :: X String
 clockColor = do now<-io getTime
